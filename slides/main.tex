@@ -1,0 +1,183 @@
+\documentclass[aspectratio=169]{beamer}
+\beamertemplatenavigationsymbolsempty
+\usecolortheme{beaver}
+\setbeamertemplate{blocks}[rounded=true, shadow=true]
+\setbeamertemplate{footline}[page number]
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage[english,russian]{babel}
+\usepackage{xcolor}
+
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,amsfonts,amsmath,mathtext}
+%\usepackage{subfig}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{quotes}
+\usepackage{tikzscale}
+\usepackage{scalefnt}
+\usepackage{xcolor}
+\usepackage[all]{xy} % xy package for diagrams
+\usepackage{array}
+\usepackage{multicol}% many columns in slide
+\usepackage{hyperref}% urls
+\usepackage{hhline}%tables
+\usepackage{booktabs}
+% \usepackage{biblatex}
+
+
+
+\def\bw{\mathbf{w}}
+\def\balpha{\boldsymbol{\alpha}}
+\def\ltrn{\mathcal{L}_{\mathrm{train}}}
+\def\lval{\mathcal{L}_{\mathrm{val}}}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+
+
+\definecolor{dark_green}{rgb}{0, 0.788, 0}
+\definecolor{dark_red}{rgb}{0.9, 0, 0}
+
+
+% Your figures are here:
+\graphicspath{ {fig/} {../fig/} }
+
+\definecolor{ao(english)}{rgb}{0.0, 0.5, 0.0}
+\definecolor{bleudefrance}{rgb}{0.19, 0.55, 0.91}
+
+%----------------------------------------------------------------------------------------------------------
+
+\title[\hbox to 56mm{Structural pruning}]{Структурное прореживание моделей глубокого обучения на основе суррогатных моделей}
+
+\author{М.\,О.~Иванов\inst{} \\
+\tt{\footnotesize ivanov.mo@phystech.edu }}
+\institute{\inst{} Москва, Московский физико-технический институт \\
+\textbf{Научный руководитель}: к.ф.-м.н. Бахтеев Олег Юрьевич} \date{2025}
+%----------------------------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+\thispagestyle{empty}
+\maketitle
+\end{frame}
+%-----------------------------------------------------------------------------------------------------
+\begin{frame}{Цель исследования}
+
+\begin{block}{Цель} 
+  Предложить метод структурного прореживания нейросетей.
+\end{block}
+
+~\\
+\begin{block}{Проблема}
+  Существующие методы работают послойно. Учёт взаимосвязей между слоями модели является вычислительно сложной задачей.
+\end{block}
+~\\
+\begin{block}{Метод решения}
+  Предлагаемый метод основан на построении суррогатной графовой модели, повторяющей структуру исходной нейросети.
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Схема предлагаемого решения}
+    
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\linewidth]{figs/pruning_graph.png}
+        Упрощённая схема residual connection. Каждому ребру сопоставляется $\gamma$, по множеству которых граф оптимизируется.
+    \end{figure}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+
+
+\begin{frame}{Постановка задачи}
+\begin{itemize}
+\item Архитектура модели представляет собой ориентированный ациклический граф $G = (V, E)$. Каждая вершина $v_i \in V$ соответствует слою нейронной сети, и каждое ребро $e_{ij} \in E$ представляет поток данных из выхода слоя $v_i$ до входа $v_j$. 
+
+\item В данной формулировке удаление вершины означает удаление соответствующего слоя из сети, тогда как удаление ребра к устранению зависимости передачи данных между слоями (например, в случае residual connection).
+
+\item Задана выборка $\mathfrak{D} = \mathfrak{D}_\text{train} \cup \mathfrak{D}_\text{val}$. Задана функция потерь $\mathcal{L}$. Пусть $\boldsymbol w$ -- параметры модели до прунинга, а $\boldsymbol w'$ -- параметры модели после. Задача оптимизации
+$$\min_{\boldsymbol w' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathfrak{D} \mid \boldsymbol w') - \mathcal{L}(\mathfrak{D} \mid \boldsymbol w) \right|.$$
+
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Предлагаемый метод}
+    \begin{itemize}
+        \item Пусть задано $\gamma_{ij} \in [0, 1]$ для каждого ребра $e_{ij} \in E$. Также для графа $G$ задана маска рёбер $\boldsymbol M \in \mathbb{Z}_2^{|E|}$:
+        $$ (\boldsymbol M)_{ij} = 1 \quad \Leftrightarrow \quad \gamma_{ij} = 0.$$
+
+        \item Тогда оптимизационная задача:
+        $$ \gamma = \arg\min\limits_{\gamma \in [0, 1]^{|E|}} \left( \mathsf{E}_{\boldsymbol M} \left\| G(\gamma, \boldsymbol M) - \mathcal{L}(\boldsymbol M)) \right\|^2_2 \right).$$
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Постановка эксперимента}
+  \begin{itemize}
+    \item Цель -- сравнение качества базовых суррогатных моделей для предложенного метода.
+
+    \vspace{10pt}
+    
+    \item В эксперименте проводится прунинг ResNet-50, фиксируется число удаляемых рёбер -- 15\%.
+
+    \vspace{10pt}
+    
+    \item В сравнении участвуют следующие базовые методы:
+        \begin{small}
+        \begin{itemize} 
+        \item \textbf{(LinReg)}: Линейная регрессия,
+        \item \textbf{(LogReg)}: Логистическая регрессия,
+        \item \textbf{(FCN)}: Простая нейросеть.
+        \end{itemize}
+      \end{small}
+  \end{itemize}
+  
+
+  
+\end{frame}
+
+
+\begin{frame}{Результаты эксперимента}
+  \begin{itemize}
+    \item Рассматриваются задачи классификации изображений из датасета CIFAR10 на 2 класса.
+    \item  Приводится точность предсказаний метрики AUC на контроле после прунинга.
+  \end{itemize}
+  \begin{table}
+    \centering
+    \begin{tabular}{c|c}
+    \toprule
+    \textbf{Method} & \textbf{MAPE Test} \\ \midrule
+    LinReg & 19.6\% \\
+    LogReg & 18.7\% \\
+    NN & \textbf{16.8\%} \\ \bottomrule
+    \end{tabular}
+  \end{table}
+  Из таблицы видно, что базовые методы решают поставленную задачу, однако точность недостаточна.
+  
+\end{frame}
+
+
+
+\begin{frame}{Заключение}
+    \begin{itemize}
+      \item Рассмотрена задача структурного прореживания нейросетей.
+      \vspace{10pt}
+      \item Предложен метод структурного прореживания нейросетей.
+      \vspace{10pt}
+      \item Проведены базовые эксперименты для сравнения качества суррогатных моделей.
+      \vspace{10pt}
+      \item Планируется теоретическое обоснование предложенного метода и его имплементация.
+    \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\end{document} 
