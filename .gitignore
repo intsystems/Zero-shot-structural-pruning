@@ -123,4 +123,4 @@ notes
 */mnist
 *.csv
 !.dvc
-*.bib
+project_library.bib

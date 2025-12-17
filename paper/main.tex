@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{doi}
+
+\title{Zero-shot Structural Pruning}
+
+\author{ Maksim Ivanov\\
+	Department of Intelligent Systems\\
+    MIPT\\
+	\texttt{ivanov.mo@phystech.edu} \\
+	\And
+    Oleg Bakhteev \\
+    Department of Intelligent Systems\\
+    MIPT\\
+    \texttt{bakhteev@phystech.edu} \\
+	%% \AND
+	%% Coauthor \\
+	%% Affiliation \\
+	%% Address \\
+	%% \texttt{email} \\
+	%% \And
+	%% Coauthor \\
+	%% Affiliation \\
+	%% Address \\
+	%% \texttt{email} \\
+	%% \And
+	%% Coauthor \\
+	%% Affiliation \\
+	%% Address \\
+	%% \texttt{email} \\
+}
+\date{}
+
+\renewcommand{\shorttitle}{Zero-shot Structural Pruning}
+
+%%% Add PDF metadata to help others organize their library
+%%% Once the PDF is generated, you can check the metadata with
+%%% $ pdfinfo template.pdf
+\hypersetup{
+pdftitle={Zero-shot Structural Pruning},
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+	The paper investigates the problem of structural pruning of models. Structural pruning is the process of removing groups of unimportant [TODO: irrelevant?] weights from a neural network, for example, filters in CNN or skip-connections. Proper pruning strategy leads to improvement of both generalizing ability and inference performance. Main difficulty of structural pruning is that when one layer of the network is removed, its dependent layers should also be removed. The proposed method is based on the deep learning computation graph analyzing and estimation of information flow transferred through it. The method enables estimation of the importance of operations in a computation graph in a zero-shot mode, i.e., using only a single pass of a subset of data through the analyzed model.p The basic idea [TODO]. To demonstrate the performance of the proposed method we conduct multiple experiments on synthetic data, CIFAR-10 and Wikitext dataset [TODO].
+\end{abstract}
+
+\section{Introduction}
+Training neural networks requires increasingly large amounts of computing power \citep{Sevilla2022}. Training models with novel architectures can be a challenging task due to constraints on the computational budget \citep{Thompson2020}. In addition, edge computing applications require neural network inference to be performed on portable devices \citep{BanjanovicMehmedovic2023}. Consequently, there is a growing need to improve both the generalization ability and the inference performance of neural networks. One of the approaches to address the issues mentioned above is model pruning. 
+
+By pruning, we mean the task of reducing the size of a network by removing parameters \citep{Blalock2020}. Pruning is generally classified into unstructured and structured. In the first case, individual unimportant weights are set to zero, while in the second case, entire groups of unimportant weights are removed from the neural network. Several methods for unstructured pruning have been proposed \citep{inproceedings, Hassibi1992, zeng2019mlprune, Han2015}. All of them rely on weight removal according to some importance criterion, for example, weight magnitude \citep{Han2015, Lubana2020}, norm \citep{He2018}, or loss change \citep{Molchanov2016, Liu2021}.
+
+Although unstructured pruning helps reduce the computational resources required for inference \citep{Laurent2020}, pruning models with novel architectures still remains a challenge, especially when dependent layers must be removed simultaneously. This issue is investigated in \citet{Fang2023}, where structural pruning is employed by constructing a Dependency Graph to explicitly model inter-layer dependencies and comprehensively group coupled parameters for pruning. Other works review the structural pruning problem and propose methods that either do not use dataset information \citep{Tanaka2020} or rely only on a small number of samples \citep{Sun2023}. The goal of many investigations is to perform pruning in a zero-shot setting, i.e., without fine-tuning \citep{Chen2021}. However, many methods are designed for specific architectures, which poses a significant obstacle to applying such algorithms across diverse problems \citep{Sun2023, Wang2019}.
+
+In this paper, we investigate the problem of structural pruning. We consider the computation graph as a directed graph in which the vertices correspond to the layers. The proposed method is based on analyzing the deep learning computation graph and estimating the information flow transferred through it. Our goal is to perform structural pruning on arbitrary neural network architectures, without restricting the method to a specific one. The method enables estimation of the importance of operations in a computation graph in a zero-shot setting, i.e., using only a single forward pass of a subset of data through the analyzed model.
+[TODO: sota результаты?]
+
+The computational experiment is performed on synthetic data, CIFAR-10 and Wikitext dataset [TODO: не одно предложение].
+
+\section{Problem statement}
+
+In this work, we address the problem of structural pruning in deep neural networks, formulated in terms of their computation graphs. We define the \textbf{computation graph} of a neural network as a directed graph $G = (V, E)$, where each vertex $v_i \in V$ corresponds to a layer (or a computational module) of the network, and each directed edge $e_{ij} \in E$ represents the data flow from the output of layer $v_i$ to the input of layer $v_j$. Formally,
+$$e_{ij} \in E \quad \Leftrightarrow \quad \mathbf{h}_j = \mathbf{f_j}(\mathbf{h}_i),$$
+where $\mathbf{h}_i$ denotes the activation produced by vertex $v_i$, and $\mathbf{f_j}$ is the transformation implemented by vertex $v_j$. [TODO картинка] In this formulation, removing a vertex corresponds to eliminating the entire layer from the network, whereas removing an edge corresponds to cutting a data dependency between two layers (e.g., in residual or multi-branch architectures).
+
+[TODO] We consider three possible structural pruning scenarios:
+\begin{enumerate}
+    \item Edge removal — deleting certain connections $(e_{ij})$ in $E$ to reduce memory consumption and computational cost, at the risk of accuracy degradation.
+    \item Edge removal with fine-tuning — pruning followed by re-optimization of the remaining parameters to recover lost performance.
+    \item Transfer learning.
+\end{enumerate}
+
+Let the training set be
+$$
+\mathcal{D} = \{ (\mathbf{x}_n, y_n) \}_{n=1}^N, 
+\quad \mathbf{x}_n \in \mathbb{R}^d, 
+\quad y_n \in \mathcal{Y},
+$$
+and let $\mathbf{w} \in \mathbb{R}^k$ be the vector of all model parameters. The model is trained by minimizing a loss function $\mathcal{L}(\mathcal{D} \mid \mathbf{w})$.
+
+After pruning, we obtain a sparse parameter vector $\mathbf{w}' \in \mathbb{R}^k$, in which certain groups of parameters are set to zero corresponding to removed edges or vertices. The challenge of structural pruning lies in estimating the importance of parameter groups in terms of their contribution to the network's information flow and final accuracy.
+
+We investigate two general approaches:
+\begin{enumerate}
+    \item Loss-based pruning — directly measuring the post-pruning loss difference and selecting $\mathbf{w}'$ to minimize the performance drop:
+    
+    $$\min_{\mathbf{w}' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathcal{D} \mid \mathbf{w}') - \mathcal{L}(\mathcal{D} \mid \mathbf{w}) \right|$$.
+    \item Taylor approximation of the loss function — estimating the impact of pruning using a second-order Taylor expansion around $\mathbf{w}$:
+    $$
+    \mathcal{L}(\mathcal{D} \mid \mathbf{w}') \approx 
+    \mathcal{L}(\mathcal{D} \mid \mathbf{w}) + 
+    \mathbf{g}^\top \Delta\mathbf{w} + 
+    \frac{1}{2} \Delta\mathbf{w}^\top \mathbf{H} \, \Delta\mathbf{w},
+    $$
+    where $\mathbf{g} = \frac{\partial \mathcal{L}}{\partial \mathbf{w}}$ is the gradient and $\mathbf{H}$ is the Hessian matrix.
+\end{enumerate}
+
+The problem now is to choose an estimation strategy for parameter group importance that leads to effective pruning, i.e., maximizes the reduction in model size and computational complexity while keeping the loss increase within acceptable bounds.
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}
