@@ -1,4 +1,4 @@
-# Zero-shot structural pruning
+# Surrogate-based Neural Network Structural Pruning
 
 |  |  Link |
 | :---: | :---: |
