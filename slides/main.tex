@@ -58,8 +58,8 @@
 
 \author{М.\,О.~Иванов\inst{} \\
 \tt{\footnotesize ivanov.mo@phystech.edu }}
-\institute{\inst{} Москва, Московский физико-технический институт \\
-\textbf{Научный руководитель}: к.ф.-м.н. Бахтеев Олег Юрьевич} \date{2025}
+\institute{\inst{} Москва, Московский физико-технический институт}
+\date{2026}
 %----------------------------------------------------------------------------------------------------------
 \begin{document}
 %----------------------------------------------------------------------------------------------------------
@@ -86,12 +86,16 @@
 \end{frame}
 
 \begin{frame}{Схема предлагаемого решения}
-    
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.9\linewidth]{figs/pruning_graph.png}
-        Упрощённая схема residual connection. Каждому ребру сопоставляется $\gamma$, по множеству которых граф оптимизируется.
-    \end{figure}
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            Упрощённая схема residual connection и соответствующей суррогатной графовой модели. 
+            Каждому ребру сопоставляется $\gamma$, 
+            по множеству которых граф оптимизируется.
+        \end{column}
+        \begin{column}{0.6\textwidth}
+            \includegraphics[width=\linewidth]{figs/information_graph.eps}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 %----------------------------------------------------------------------------------------------------------
@@ -115,67 +119,97 @@ $$\min_{\boldsymbol w' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathfrak{D} \mid
         \item Пусть задано $\gamma_{ij} \in [0, 1]$ для каждого ребра $e_{ij} \in E$. Также для графа $G$ задана маска рёбер $\boldsymbol M \in \mathbb{Z}_2^{|E|}$:
         $$ (\boldsymbol M)_{ij} = 1 \quad \Leftrightarrow \quad \gamma_{ij} = 0.$$
 
+        \item Дополнительно накладываем следующее ограничение на исходящие ребра каждой вершины:
+        $$ \sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1 $$
+
         \item Тогда оптимизационная задача:
-        $$ \gamma = \arg\min\limits_{\gamma \in [0, 1]^{|E|}} \left( \mathsf{E}_{\boldsymbol M} \left\| G(\gamma, \boldsymbol M) - \mathcal{L}(\boldsymbol M)) \right\|^2_2 \right).$$
+        $$ \begin{aligned}
+        \gamma = \arg\min\limits_{\gamma \in [0, 1]^{|E|}} \quad & \left( \mathsf{E}_{\boldsymbol M} \left\| G(\gamma, \boldsymbol M) - \mathcal{L}(\boldsymbol M)) \right\|^2_2 \right) \\ \textrm{s.t.} \quad & \sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1.
+        \end{aligned}
+        $$
     \end{itemize}
 
 \end{frame}
 
 \begin{frame}{Постановка эксперимента}
-  \begin{itemize}
-    \item Цель -- сравнение качества базовых суррогатных моделей для предложенного метода.
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+            \item Цель -- сравнение качества базовых суррогатных моделей для предложенного метода.
 
-    \vspace{10pt}
-    
-    \item В эксперименте проводится прунинг ResNet-50, фиксируется число удаляемых рёбер -- 15\%.
+            \vspace{10pt}
+            
+            \item В сравнении участвуют следующие базовые методы:
+                \begin{small}
+                \begin{itemize} 
+                \item \textbf{(Graph)}: Предложенный метод,
+                \item \textbf{(FCN)}: Простая нейросеть,
+                \item \textbf{(Linear)}: Линейная регрессия,
+                \item \textbf{(L1)}: Метод, основанный на измерении величин параметров,
+                \item \textbf{(Taylor)}: Метод, использующий приближение Тейлора до 1-го и 2-го порядков.
+                \end{itemize}
+              \end{small}
+          \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \includegraphics[width=\linewidth]{figs/graph_example_1.eps}
+            
+            В эксперименте проводилась оптимизация суррогатных моделей, построенных на основе семплированных графов из нод $\text{ReLU}(\text{Linear}(x))$.
+        \end{column}
+    \end{columns}
 
-    \vspace{10pt}
-    
-    \item В сравнении участвуют следующие базовые методы:
-        \begin{small}
-        \begin{itemize} 
-        \item \textbf{(LinReg)}: Линейная регрессия,
-        \item \textbf{(LogReg)}: Логистическая регрессия,
-        \item \textbf{(FCN)}: Простая нейросеть.
-        \end{itemize}
-      \end{small}
-  \end{itemize}
-  
 
   
 \end{frame}
-
 
 \begin{frame}{Результаты эксперимента}
   \begin{itemize}
-    \item Рассматриваются задачи классификации изображений из датасета CIFAR10 на 2 класса.
-    \item  Приводится точность предсказаний метрики AUC на контроле после прунинга.
+    \item Рассматриваются задачи классификации изображений из датасета MNIST.
+    \item Приводятся значения коэффициентов корреляции Кендалла между истинными и прогнозируемыми значениями ошибок.
   \end{itemize}
   \begin{table}
     \centering
-    \begin{tabular}{c|c}
-    \toprule
-    \textbf{Method} & \textbf{MAPE Test} \\ \midrule
-    LinReg & 19.6\% \\
-    LogReg & 18.7\% \\
-    NN & \textbf{16.8\%} \\ \bottomrule
+    \small
+    \begin{tabular}{|r|c|c|c|c|}
+    \hline
+    \bfseries Model & 10--15 edges & 20--40 edges & 50--100 edges & more than 100 edges \\
+    \hline
+    Graph  & 0.253 $\pm$ 0.202 & 0.242 $\pm$ 0.146 & \textbf{0.282} $\pm$ 0.105 & \textbf{0.329} $\pm$ 0.045 \\
+    FCN & $-0.011$ $\pm$ 0.151 & $-0.042$ $\pm$ 0.128 & $-0.020$ $\pm$ 0.061 & $-0.036$ $\pm$ 0.066 \\
+    Linear & 0.039 $\pm$ 0.135 & 0.137 $\pm$ 0.083 & 0.167 $\pm$ 0.061 & 0.199 $\pm$ 0.032 \\
+    L1 & \textbf{0.401} $\pm$ 0.057 & \textbf{0.353} $\pm$ 0.049 & 0.259 $\pm$ 0.041 & 0.192 $\pm$ 0.057 \\
+    Taylor & 0.094 $\pm$ 0.182 & $-0.033$ $\pm$ 0.055 & $-0.090$ $\pm$ 0.051 & $-0.136$ $\pm$ 0.030 \\
+    \hline
     \end{tabular}
   \end{table}
-  Из таблицы видно, что базовые методы решают поставленную задачу, однако точность недостаточна.
+  Из таблицы видно, что предложенный метод демонстрирует высокую эффективность при решении предложенной задачи. 
   
 \end{frame}
 
+\begin{frame}{Результаты эксперимента}
+    \begin{figure}
+    \includegraphics[width=0.9\textwidth]{figs/graph_1_iter_2_experiment_6.eps}
+    
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/graph_2_iter_2_experiment_6.eps}
+    
+    График истинных и прогнозируемых значений ошибок для сравнения методов. Используется модель с 10--15 рёбрами.
+    \label{graph_iter_2}
+    \end{figure}
+\end{frame}
 
 
 \begin{frame}{Заключение}
     \begin{itemize}
       \item Рассмотрена задача структурного прореживания нейросетей.
       \vspace{10pt}
-      \item Предложен метод структурного прореживания нейросетей.
+      \item Предложен метод структурного прореживания нейросетей на основе суррогатных моделей.
       \vspace{10pt}
-      \item Проведены базовые эксперименты для сравнения качества суррогатных моделей.
+      \item Эксперименты показали, что предложенный метод превосходит суррогатные модели, которые не используют информацию о вычислительном графе.
       \vspace{10pt}
-      \item Планируется теоретическое обоснование предложенного метода и его имплементация.
+      \item Планируется расширить и обобщить этот метод для прореживания по каналам (например, по фильтрам в свёрточных нейросетях).
+      \vspace{10pt}
+      \item Планируется подача в рецензируемый журнал.
     \end{itemize}
 \end{frame}
 

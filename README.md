@@ -1,5 +1,7 @@
 # Surrogate-based Neural Network Structural Pruning
 
+Supervisor: [Oleg Bakhteev, PhD](https://bahleg.site/publications)
+
 |  |  Link |
 | :---: | :---: |
 | Paper |  [link](https://github.com/intsystems/Zero-shot-structural-pruning/blob/master/paper/main.pdf) |
@@ -7,5 +9,7 @@
 | Slides | [link](https://github.com/intsystems/Zero-shot-structural-pruning/blob/master/slides/slides.pdf) |
 
 ## Abstract
-The paper investigates the problem of structural pruning of models. Structural pruning is the process of removing groups of unimportant weights from a neural network, for example, filters in CNN or skip-connections. Proper pruning strategy leads to improvement of both generalizing ability and inference performance. Main difficulty of structural pruning is that when one layer of the network is removed, its dependent layers should also be removed. The proposed method is based on the deep learning computation graph analyzing and estimation of information flow transferred through it. The method enables estimation of the importance of operations in a computation graph in a zero-shot mode, i.e., using only a single pass of a subset of data through the analyzed model.p The basic idea [TODO]. To demonstrate the performance of the proposed method we conduct multiple experiments on synthetic data, CIFAR-10 and Wikitext dataset [TODO].
+This paper investigates the problem of structural pruning in neural networks. Structural pruning is the procedure of removing entire groups of parameters from a neural network, for example, filters in CNNs or skip connections. An appropriate pruning strategy can improve both generalization performance and inference efficiency. The main difficulty of structural pruning lies in the fact that when a layer is removed, all dependent layers must also be removed or consistently modified. 
+
+The proposed method is based on the analysis of the deep learning computation graph and the estimation of the information flow propagated through it. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using several forward passes of a data subset through the analyzed model. To demonstrate the effectiveness of the proposed method, we conduct multiple experiments on the MNIST dataset.
 
