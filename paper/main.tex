@@ -1,117 +1,393 @@
-\documentclass{article}
-\usepackage{arxiv}
-
-\usepackage[utf8]{inputenc}
-\usepackage[english]{babel}
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
 \usepackage[T1]{fontenc}
-\usepackage{url}
-\usepackage{booktabs}
-\usepackage{amsfonts}
-\usepackage{nicefrac}
-\usepackage{microtype}
-\usepackage{lipsum}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
 \usepackage{graphicx}
-\usepackage{natbib}
-\usepackage{doi}
+\usepackage{float}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+%\usepackage{color}
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+%\urlstyle{rm}
+\usepackage{amsmath} 
+\usepackage{amssymb} 
 
-\title{Surrogate-based Neural Network Structural Pruning}
-
-\author{ Maksim Ivanov\\
-	Department of Intelligent Systems\\
-    MIPT\\
-	\texttt{ivanov.mo@phystech.edu} \\
-	\And
-    Oleg Bakhteev \\
-    Department of Intelligent Systems\\
-    MIPT\\
-    \texttt{bakhteev@phystech.edu} \\
-	%% \AND
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
-	%% \And
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
-	%% \And
-	%% Coauthor \\
-	%% Affiliation \\
-	%% Address \\
-	%% \texttt{email} \\
-}
-\date{}
-
-\renewcommand{\shorttitle}{Surrogate-based Neural Network Structural Pruning}
-
-%%% Add PDF metadata to help others organize their library
-%%% Once the PDF is generated, you can check the metadata with
-%%% $ pdfinfo template.pdf
-\hypersetup{
-pdftitle={Surrogate-based Neural Network Structural Pruning},
-}
-
+%
 \begin{document}
-\maketitle
-
+%
+\title{Few-shot Structural Neural Network Pruning\\Using Computational Graph Information}
+%
+\titlerunning{Few-shot Structural Neural Network Pruning}
+% If the    paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Maksim Ivanov\inst{1}\orcidID{0009-0008-0025-8892} \and
+Oleg Bakhteev\inst{2}\orcidID{0000-0002-6497-3667}}
+%
+\authorrunning{M. Ivanov, O. Bakhteev}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Moscow Center for Advanced Studies, Russia \\
+\email{maksim.ivanov24@gmail.com}
+\and
+Applied AI Institute, Moscow, Russia \\
+\email{bakhteev.o@gmail.com}}
+%
+\maketitle              % typeset the header of the contribution
+%
 \begin{abstract}
-	The paper investigates the problem of structural pruning of models. Structural pruning is the process of removing groups of unimportant [TODO: irrelevant?] weights from a neural network, for example, filters in CNN or skip-connections. Proper pruning strategy leads to improvement of both generalizing ability and inference performance. Main difficulty of structural pruning is that when one layer of the network is removed, its dependent layers should also be removed. The proposed method is based on the deep learning computation graph analyzing and estimation of information flow transferred through it. The method enables estimation of the importance of operations in a computation graph in a zero-shot mode, i.e., using only a single pass of a subset of data through the analyzed model.p The basic idea [TODO]. To demonstrate the performance of the proposed method we conduct multiple experiments on synthetic data, CIFAR-10 and Wikitext dataset [TODO].
+This paper investigates the problem of structural pruning in neural networks. Structural pruning is the procedure of removing entire groups of parameters from a neural network, for example, filters in CNNs or skip connections. An appropriate pruning strategy can improve both generalization performance and inference efficiency. The main difficulty of structural pruning lies in the fact that when a layer is removed, all dependent layers must also be removed or consistently modified. 
+
+The proposed method is based on the analysis of the deep learning computation graph and the estimation of the information flow propagated through it. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using several forward passes of a data subset through the analyzed model. To demonstrate the effectiveness of the proposed method, we conduct multiple experiments on the MNIST dataset.
+
+\keywords{Structural pruning \and Surrogate graph model \and Few-shot}
 \end{abstract}
-
+%
+%
+%
 \section{Introduction}
-Training neural networks requires increasingly large amounts of computing power \citep{Sevilla2022}. Training models with novel architectures can be a challenging task due to constraints on the computational budget \citep{Thompson2020}. In addition, edge computing applications require neural network inference to be performed on portable devices \citep{BanjanovicMehmedovic2023}. Consequently, there is a growing need to improve both the generalization ability and the inference performance of neural networks. One of the approaches to address the issues mentioned above is model pruning. 
+Training neural networks requires increasingly large amounts of computational resources \cite{Sevilla2022}. Developing and training models with novel architectures can be particularly challenging under limited computational budgets \cite{Tan2019}. In addition, edge computing applications require neural network inference to be performed on resource-constrained portable devices \cite{BanjanovicMehmedovic2023}. Consequently, there is a growing need to improve both the generalization performance and the inference efficiency of neural networks. One of the approaches to addressing the issues mentioned above is model pruning.
 
-By pruning, we mean the task of reducing the size of a network by removing parameters \citep{Blalock2020}. Pruning is generally classified into unstructured and structured. In the first case, individual unimportant weights are set to zero, while in the second case, entire groups of unimportant weights are removed from the neural network. Several methods for unstructured pruning have been proposed \citep{inproceedings, Hassibi1992, zeng2019mlprune, Han2015}. All of them rely on weight removal according to some importance criterion, for example, weight magnitude \citep{Han2015, Lubana2020}, norm \citep{He2018}, or loss change \citep{Molchanov2016, Liu2021}.
+By pruning, we mean the task of reducing the size of a network by removing parameters \cite{Liang2021}. Pruning is generally classified into unstructured and structured approaches. In the first case, individual irrelevant weights are set to zero, whereas in the second case, entire groups of parameters are removed from the neural network. Several methods for unstructured pruning have been proposed \cite{inproceedings,Hassibi1992,zeng2019mlprune,Han2015}. Most of them rely on removing weights according to an importance criterion, for example, weight magnitude \cite{Han2015,Lubana2020}, norm-based criteria \cite{He2018}, or estimated loss change \cite{Molchanov2016,Hassibi1992}.
 
-Although unstructured pruning helps reduce the computational resources required for inference \citep{Laurent2020}, pruning models with novel architectures still remains a challenge, especially when dependent layers must be removed simultaneously. This issue is investigated in \citet{Fang2023}, where structural pruning is employed by constructing a Dependency Graph to explicitly model inter-layer dependencies and comprehensively group coupled parameters for pruning. Other works review the structural pruning problem and propose methods that either do not use dataset information \citep{Tanaka2020} or rely only on a small number of samples \citep{Sun2023}. The goal of many investigations is to perform pruning in a zero-shot setting, i.e., without fine-tuning \citep{Chen2021}. However, many methods are designed for specific architectures, which poses a significant obstacle to applying such algorithms across diverse problems \citep{Sun2023, Wang2019}.
+Although unstructured pruning helps reduce the computational cost of inference \cite{Han2015}, pruning models with novel architectures remains challenging, especially when dependent layers must be removed simultaneously. This issue is investigated in \cite{Fang2023}, where structural pruning is performed by constructing a Dependency Graph to explicitly model inter-layer dependencies and to group coupled parameters for joint pruning. Other works review the structural pruning problem and propose methods that either do not use dataset information \cite{Tanaka2020} or rely only on a small number of samples \cite{Tanaka2020}. The goal of many studies is to perform pruning in a zero-shot setting, i.e., without fine-tuning \cite{Chen2021}. However, many existing methods are designed for specific architectures, which poses a significant obstacle to applying such algorithms across diverse problems \cite{Frantar2023,Wang2019}.
 
-In this paper, we investigate the problem of structural pruning. We consider the computation graph as a directed graph in which the vertices correspond to the layers. The proposed method is based on analyzing the deep learning computation graph and estimating the information flow transferred through it. Our goal is to perform structural pruning on arbitrary neural network architectures, without restricting the method to a specific one. The method enables estimation of the importance of operations in a computation graph in a zero-shot setting, i.e., using only a single forward pass of a subset of data through the analyzed model.
-[TODO: sota результаты?]
+In this paper, we investigate the problem of structural pruning. We represent the computation graph as a directed graph whose vertices correspond to network layers (see Fig.~\ref{information_graph}). The proposed method is based on analyzing the deep learning computation graph and estimating the information flow propagated through it. Our goal is to perform structural pruning for arbitrary neural network architectures without restricting the method to a specific family of models. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using only a small subset of data passed through the analyzed model.
 
-The computational experiment is performed on synthetic data, CIFAR-10 and Wikitext dataset [TODO: не одно предложение].
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=0.8\textwidth]{figs/information_graph.eps}
+\caption{A schematic illustration of a residual connection and the corresponding surrogate model graph. A coefficient $\gamma_{ij}$ is assigned to each edge; the collection of these coefficients determines the optimized graph structure.}
+\label{information_graph}
+\end{figure}
+
+The computational experiments are conducted on the MNIST dataset. The proposed method outperforms surrogate-based baselines that do not replicate the structure of the original model by a factor of $1.5\times$ in terms of correlation metrics. This improvement is further illustrated using correlation coefficients and scatter plots.~\footnote{The code will be published in the camera-ready version.}
+
+Our main contributions are:
+\begin{enumerate}
+\item We propose a surrogate-based structural pruning method that explicitly incorporates information from the neural network computation graph. The method represents the model as a directed computational graph and introduces structural constraints on the surrogate model derived from the information flow within this graph.
+
+\item We empirically demonstrate that the proposed graph-based constraints improve surrogate reliability in the few-shot setting, enabling more stable and interpretable estimation of operation importance for structural pruning.
+
+\item We validate the proposed approach on multiple models trained on the MNIST dataset. To assess the generality of the method, we consider randomly generated computational graphs inspired by neural architecture search~\cite{Zoph2017} search spaces and show that incorporating computation graph information leads to improved performance compared to surrogate models that ignore the original model structure.
+\end{enumerate}
 
 \section{Problem statement}
 
-In this work, we address the problem of structural pruning in deep neural networks, formulated in terms of their computation graphs. We define the \textbf{computation graph} of a neural network as a directed graph $G = (V, E)$, where each vertex $v_i \in V$ corresponds to a layer (or a computational module) of the network, and each directed edge $e_{ij} \in E$ represents the data flow from the output of layer $v_i$ to the input of layer $v_j$. Formally,
-$$e_{ij} \in E \quad \Leftrightarrow \quad \mathbf{h}_j = \mathbf{f_j}(\mathbf{h}_i),$$
-where $\mathbf{h}_i$ denotes the activation produced by vertex $v_i$, and $\mathbf{f_j}$ is the transformation implemented by vertex $v_j$. [TODO картинка] In this formulation, removing a vertex corresponds to eliminating the entire layer from the network, whereas removing an edge corresponds to cutting a data dependency between two layers (e.g., in residual or multi-branch architectures).
+In this work we address the problem of structural pruning in deep neural networks formulated in terms of their computation graphs. We define the \textbf{computation graph} of a neural network as a directed graph $G = (V, E)$, where each vertex $v_i \in V$ corresponds to a layer (or computational module) of the network, and each directed edge $e_{ij} \in E$ represents the data flow from the output of layer $v_i$ to the input of layer $v_j$. Formally,
+\begin{equation}
+e_{ij} \in E 
+\quad \Leftrightarrow \quad 
+\mathbf{h}_j = \mathbf{f}_j(\mathbf{h}_i),
+\end{equation}
+where $\mathbf{h}_i$ denotes the activation produced by vertex $v_i$, and $\mathbf{f}_j$ is the transformation implemented at vertex $v_j$. In this formulation, removing a vertex corresponds to eliminating the entire layer from the network, whereas removing an edge corresponds to removing a data dependency between two layers (e.g., in residual or multi-branch architectures).
 
-[TODO] We consider three possible structural pruning scenarios:
+We consider the scenario of \textbf{edge removal}~--- deleting selected connections $e_{ij} \in E$ in order to reduce memory consumption and computational cost, possibly at the expense of predictive accuracy.
+
+Let the dataset be denoted by $\mathfrak{D} = (\mathbf{X}, \mathbf{y})$, where $\mathbf{X} \in \mathbb{R}^{m \times n}$ is the matrix of input features and $\mathbf{y} \in \mathbb{R}^m$ is the vector of target variables. Let $\mathbf{w} \in \mathbb{R}^k$ be the vector of model parameters. The model is trained by minimizing the error function
+\begin{equation}
+S = S(\mathbf{w} \mid \mathfrak{D}, f).
+\end{equation}
+
+After pruning, we obtain a modified parameter vector $\mathbf{w}' \in \mathbb{R}^k$, in which certain groups of parameters are set to zero, corresponding to removed edges or vertices in the computation graph. The challenge of structural pruning lies in estimating the importance of parameter groups in terms of their contribution to the network information flow and the final predictive performance.
+
+The following baselines can be found in the literature:
 \begin{enumerate}
-    \item Edge removal — deleting certain connections $(e_{ij})$ in $E$ to reduce memory consumption and computational cost, at the risk of accuracy degradation.
-    \item Edge removal with fine-tuning — pruning followed by re-optimization of the remaining parameters to recover lost performance.
-    \item Transfer learning.
-\end{enumerate}
+    \item \textbf{Loss-based pruning}~--- directly measuring the post-pruning error difference and selecting $\mathbf{w}'$ to minimize the performance drop:
+    \begin{equation}
+    \min_{\mathbf{w}' \in \mathbb{R}^k}
+    \left|
+    S(\mathbf{w}' \mid \mathfrak{D}, f)
+    -
+    S(\mathbf{w} \mid \mathfrak{D}, f)
+    \right|.
+    \end{equation}
+    This objective leads to a combinatorial optimization problem and is therefore computationally intractable in practice \cite{Molchanov2019}.
 
-Let the training set be
-$$
-\mathcal{D} = \{ (\mathbf{x}_n, y_n) \}_{n=1}^N, 
-\quad \mathbf{x}_n \in \mathbb{R}^d, 
-\quad y_n \in \mathcal{Y},
-$$
-and let $\mathbf{w} \in \mathbb{R}^k$ be the vector of all model parameters. The model is trained by minimizing a loss function $\mathcal{L}(\mathcal{D} \mid \mathbf{w})$.
-
-After pruning, we obtain a sparse parameter vector $\mathbf{w}' \in \mathbb{R}^k$, in which certain groups of parameters are set to zero corresponding to removed edges or vertices. The challenge of structural pruning lies in estimating the importance of parameter groups in terms of their contribution to the network's information flow and final accuracy.
-
-We investigate two general approaches:
-\begin{enumerate}
-    \item Loss-based pruning — directly measuring the post-pruning loss difference and selecting $\mathbf{w}'$ to minimize the performance drop:
+    \item \textbf{Magnitude-based pruning}~--- removing parameters with the smallest magnitudes. This approach is based on the assumption that the magnitude of a parameter correlates with its importance \cite{Han2015}. In practice, the $L_1$-norm is often used to estimate parameter importance.
     
-    $$\min_{\mathbf{w}' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathcal{D} \mid \mathbf{w}') - \mathcal{L}(\mathcal{D} \mid \mathbf{w}) \right|$$.
-    \item Taylor approximation of the loss function — estimating the impact of pruning using a second-order Taylor expansion around $\mathbf{w}$:
-    $$
-    \mathcal{L}(\mathcal{D} \mid \mathbf{w}') \approx 
-    \mathcal{L}(\mathcal{D} \mid \mathbf{w}) + 
-    \mathbf{g}^\top \Delta\mathbf{w} + 
-    \frac{1}{2} \Delta\mathbf{w}^\top \mathbf{H} \, \Delta\mathbf{w},
-    $$
-    where $\mathbf{g} = \frac{\partial \mathcal{L}}{\partial \mathbf{w}}$ is the gradient and $\mathbf{H}$ is the Hessian matrix.
+    \item \textbf{Taylor-based pruning}~--- estimating the impact of pruning using a second-order Taylor expansion of the error function around $\mathbf{w}$:
+    \begin{equation}
+    S(\mathbf{w}')
+    \approx
+    S(\mathbf{w})
+    +
+    \langle \nabla S(\mathbf{w}), \Delta \mathbf{w} \rangle
+    +
+    \frac{1}{2}
+    \Delta \mathbf{w}^{\mathsf{T}}
+    \mathbf{H}
+    \Delta \mathbf{w},
+    \end{equation}
+    where $\nabla S(\mathbf{w})$ is the gradient of the error function and $\mathbf{H} = \nabla^2 S(\mathbf{w})$ is the corresponding Hessian matrix \cite{Molchanov2019}.
 \end{enumerate}
 
-The problem now is to choose an estimation strategy for parameter group importance that leads to effective pruning, i.e., maximizes the reduction in model size and computational complexity while keeping the loss increase within acceptable bounds.
+The use of local pruning methods often leads to a degradation in performance when multiple layers are pruned simultaneously. Therefore, \textbf{Magnitude-based pruning} and \textbf{Taylor-based pruning} are not well suited for large-scale structural pruning.
 
-\bibliographystyle{unsrtnat}
+The problem is therefore to design an importance estimation strategy for parameter groups that enables effective structural pruning, i.e., maximizes the reduction in model size and computational complexity while keeping the increase in the error function within acceptable bounds.
+
+\section{Structural pruning using computation graph information}
+
+Let the dataset be denoted by 
+\[
+\mathfrak{D} = \mathfrak{D}_{\text{train}} \cup \mathfrak{D}_{\text{val}}.
+\]
+Let the error function be $S(\mathbf{w} \mid \mathfrak{D}, f)$. 
+Denote by $\mathbf{w}$ the model parameters before pruning and by $\mathbf{w}'$ the parameters after pruning. 
+The pruning objective can be formulated as
+\begin{equation}
+\min_{\mathbf{w}' \in \mathbb{R}^k}
+\left|
+S(\mathbf{w}' \mid \mathfrak{D}, f)
+-
+S(\mathbf{w} \mid \mathfrak{D},  f)
+\right|.
+\end{equation}
+
+The proposed pruning algorithm constructs a surrogate graph model $G$ that replicates the structure of the original neural network. The graph is derived from the computation graph of the model. The method is based on optimizing this surrogate graph model.
+
+For each edge $e_{ij} \in E$, introduce a continuous importance coefficient $\gamma_{ij} \in [0,1]$. 
+Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ indicating whether an edge is pruned (see Fig.~\ref{residual_graph}). Formally,
+\begin{equation}
+(\mathbf{M})_{ij} = 1 
+\quad \Leftrightarrow \quad 
+\gamma_{ij} = 0.
+\end{equation}
+
+We impose the following normalization constraint on the outgoing edges of each vertex:
+\begin{equation}
+\sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1.
+\end{equation}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/pruning_graph.eps}
+\caption{Simplified schematic of a residual connection. A coefficient $\gamma_{ij}$ is assigned to each edge; smaller values of $\gamma_{ij}$ indicate lower edge importance.}
+\label{residual_graph}
+\end{figure}
+
+The final optimization problem is formulated as
+\begin{equation}
+\begin{aligned}
+\boldsymbol{\gamma}
+=
+\arg\min_{\boldsymbol{\gamma} \in [0,1]^{|E|}}
+\quad
+& \mathsf{E}_{\mathbf{M}}
+\left\|
+G(\boldsymbol{\gamma}, \mathbf{M})
+-
+S(\mathbf{w} \mid \mathfrak{D}, f)
+\right\|_2^2
+\\
+\textrm{s.t.} \quad
+&
+\sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1.
+\end{aligned}
+\end{equation}
+
+\section{Computational experiment}
+\subsection{Settings}
+
+This section focuses on the choice of neural network architecture. 
+To conduct the experiments, a handwritten digit classification task based on the MNIST dataset \cite{Deng2012} was considered.
+
+To solve this task, we implemented an algorithm for generating a graph neural network architecture. 
+The procedure follows an approach similar to neural architecture search \cite{Zoph2017}. 
+Let \texttt{LinearBlock} denote a node consisting of a linear layer followed by the ReLU activation function. 
+Formally,
+\begin{equation}
+\texttt{LinearBlock}(x) = \text{ReLU}(\text{Linear}(x)).
+\end{equation}
+
+Define \texttt{node\_list} as the list of constructed nodes. 
+Initially, \texttt{node\_list} contains two nodes: the input node and a node that maps the input to a latent representation. 
+Then, \texttt{n\_iterations} iterations of the algorithm are performed. 
+Each iteration consists of four steps.
+
+\begin{description}
+\item[\textbf{Step 1.}]
+Independently select two parent nodes from \texttt{node\_list}.
+
+\item[\textbf{Step 2.}]
+Apply a \texttt{LinearBlock} to the first parent node selected in Step~1 and append the resulting node to \texttt{node\_list}.
+
+\item[\textbf{Step 3.}]
+Apply a \texttt{LinearBlock} to the second parent node selected in Step~1 and append the resulting node to \texttt{node\_list}.
+
+\item[\textbf{Step 4.}]
+Apply a \texttt{LinearBlock} to combine the outputs obtained in Steps~2 and~3, thereby creating a new node, and append it to \texttt{node\_list}.
+\end{description}
+
+After completing all iterations, the algorithm aggregates all terminal (hanging) nodes and applies a final classifier for the MNIST task.
+
+Depending on the value of \texttt{n\_iterations}, the resulting architecture contains a different number of edges (see Figs.~\ref{graph_example_1},~\ref{graph_example_2}).
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_example_1.eps}
+\caption{The generated graph with 14 edges.}
+\label{graph_example_1}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_example_2.eps}
+\caption{The generated graph with 56 edges.}
+\label{graph_example_2}
+\end{figure}
+
+The training set for the surrogate models consists of binary masks containing either all ones, all zeros, or exactly one zero with all remaining entries equal to one. 
+Thus, the size of the training set is equal to $(\text{number of edges} + 1)$, which enables a few-shot setting. 
+The test set consists of $500$ masks sampled uniformly without replacement.
+
+The following models were compared in the experiments:
+
+\begin{itemize}
+\item \textbf{Graph}:
+The proposed surrogate graph model.
+
+\item \textbf{FCN}:
+A fully connected network with the following architecture:\\
+\texttt{Linear(number\_of\_edges, 10), ReLU(), Linear(10, 1)}.
+
+\item\textbf{Linear}:
+Linear regression.
+
+\item\textbf{L1}:
+Magnitude pruning \cite{Han2015}.
+
+\item\textbf{Taylor expansion}:
+The method using the first and second-order Taylor expansions \cite{Molchanov2019}.
+\end{itemize}
+
+The \textbf{surrogate graph model} is trained for $3000$ epochs, while the \textbf{FCN model} is trained for $1000$ epochs. 
+Both models are optimized using the mean squared error (MSE) loss and the Adam optimizer with learning rate $10^{-3}$.
+
+In the experiments, Spearman and Kendall correlation coefficients between the true and predicted error values were used as evaluation metrics. 
+These statistics assess the rank dependence between samples. 
+For a more robust evaluation, each experiment was repeated ten times, and the results were averaged.
+
+\subsection{Experiment results}
+
+As shown in Tables~\ref{results_spearman} and~\ref{results_kendall}, the proposed method demonstrates strong performance in the few-shot setting. 
+It significantly outperforms the baseline models and provides informative estimates of edge importance.
+
+\begin{table}[H]
+\caption{Average Spearman correlation coefficient over 10 runs.}
+\label{results_spearman}
+\centering
+\begin{tabular}{|r|c|c|c|c|}
+\hline
+\bfseries Model & 10--15 edges & 20--40 edges & 50--100 edges & more than 100 edges \\
+\hline
+Graph  & 0.299 $\pm$ 0.235 & 0.296 $\pm$ 0.178 & 0.349 $\pm$ 0.128 & \textbf{0.411} $\pm$ 0.057 \\
+FCN & $-0.009$ $\pm$ 0.213 & $-0.060$ $\pm$ 0.187 & $-0.028$ $\pm$ 0.090 & $-0.053$ $\pm$ 0.099 \\
+Linear & 0.060 $\pm$ 0.187 & 0.201 $\pm$ 0.122 & 0.248 $\pm$ 0.090 & 0.294 $\pm$ 0.047 \\
+L1 & \textbf{0.547} $\pm$ 0.063 & \textbf{0.505} $\pm$ 0.063 & \textbf{0.369} $\pm$ 0.060 & 0.280 $\pm$ 0.081 \\
+Taylor expansion & 0.119 $\pm$ 0.247 & $-0.052$ $\pm$ 0.082 & $-0.136$ $\pm$ 0.076 & $-0.204$ $\pm$ 0.044 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Average Kendall correlation coefficient over 10 runs.}
+\label{results_kendall}
+\centering
+\begin{tabular}{|r|c|c|c|c|}
+\hline
+\bfseries Model & 10--15 edges & 20--40 edges & 50--100 edges & more than 100 edges \\
+\hline
+Graph  & 0.253 $\pm$ 0.202 & 0.242 $\pm$ 0.146 & \textbf{0.282} $\pm$ 0.105 & \textbf{0.329} $\pm$ 0.045 \\
+FCN & $-0.011$ $\pm$ 0.151 & $-0.042$ $\pm$ 0.128 & $-0.020$ $\pm$ 0.061 & $-0.036$ $\pm$ 0.066 \\
+Linear & 0.039 $\pm$ 0.135 & 0.137 $\pm$ 0.083 & 0.167 $\pm$ 0.061 & 0.199 $\pm$ 0.032 \\
+L1 & \textbf{0.401} $\pm$ 0.057 & \textbf{0.353} $\pm$ 0.049 & 0.259 $\pm$ 0.041 & 0.192 $\pm$ 0.057 \\
+Taylor expansion & 0.094 $\pm$ 0.182 & $-0.033$ $\pm$ 0.055 & $-0.090$ $\pm$ 0.051 & $-0.136$ $\pm$ 0.030 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_1_iter_2_experiment_6.eps}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/graph_2_iter_2_experiment_6.eps}
+\caption{Scatter plot of true and predicted error values for the baseline comparison. The parameter \texttt{n\_iterations} is set to 2.}
+\label{graph_iter_2}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_1_iter_5_experiment_6.eps}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/graph_2_iter_5_experiment_6.eps}
+\caption{Scatter plot of true and predicted error values for the baseline comparison. The parameter \texttt{n\_iterations} is set to 5.}
+\label{graph_iter_5}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_1_iter_14_experiment_6.eps}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/graph_2_iter_14_experiment_6.eps}
+\caption{Scatter plot of true and predicted error values for the baseline comparison. The parameter \texttt{n\_iterations} is set to 14.}
+\label{graph_iter_14}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/graph_1_iter_30_experiment_6.eps}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/graph_2_iter_30_experiment_6.eps}
+\caption{Scatter plot of true and predicted error values for the baseline comparison. The parameter \texttt{n\_iterations} is set to 30.}
+\label{graph_iter_30}
+\end{figure}
+
+Additionally, scatter plots (Figs.~\ref{graph_iter_2}--\ref{graph_iter_30}) illustrate the relationship between true and predicted error values. 
+In all considered cases, the surrogate graph model exhibits a stronger dependence between true and predicted errors than the baseline models. 
+These visualizations are consistent with the correlation metrics reported above.
+
+The plots in the (Fig.~\ref{final_plot}) indicate that, as the number of edges in the graph model increases, the proposed method achieves higher performance.
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/final_plot.eps}
+\caption{The plot shows the dependence of correlation coefficients on the number of edges.}
+\label{final_plot}
+\end{figure}
+
+\section{Discussion}
+\begin{enumerate}
+    \item Incorporating information from the computation graph is important for structural pruning.
+    
+    \item We can consider graph information as a prior (in the context of Bayesian inference) or as an inductive bias hardwired into the model (as in our case).
+    
+    \item Despite the imperfect results, we observe that the method works more effectively than the considered baselines, which can be explained by the incorporation of structural information. This is particularly important in the few-shot setting, i.e., when the model is trained on only a small number of samples.
+    
+    \item Empirically, a shift toward zero is observed as the number of edges increases. However, for pruning it is more important to preserve the ordering of importance scores than their absolute values. This shift can be corrected in a post-processing step.
+\end{enumerate}
+
+\section{Conclusion}
+
+This paper investigated the problem of structural pruning in neural networks. 
+The proposed method is based on analyzing the deep learning computation graph and estimating the information flow propagated through it. 
+The method enables the estimation of the importance of operations in a computation graph in a few-shot setting. 
+Experiments have shown that the method is superior to surrogate models that do not use computation graph information. It is also possible to fine-tune the model after pruning, which can significantly improve its performance. Thus, the important role of computation graph information in structural pruning has been demonstrated. In future work, we plan to extend and generalize the method to channel-wise pruning (for example, filters in CNNs).
+
+\section*{Acknowledgements}
+
+The authors would like to thank Andrey Ryzhov for providing the computational resources used to conduct the experimental evaluations in this paper.
+
+
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+\bibliographystyle{splncs04}
 \bibliography{references}
 
 \end{document}
