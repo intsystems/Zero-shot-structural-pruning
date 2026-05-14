@@ -1,41 +1,17 @@
-import torch
-from torch import nn
-from torch.fx import symbolic_trace
-import torch.utils.data
-from torch.utils.data import TensorDataset, DataLoader, Subset, random_split
-import torchvision
-from torchvision import transforms
-import torch.fx as fx
-from torchvision.models import resnet50
-
-import numpy as np
-from scipy.stats import spearmanr, kendalltau
-import sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_percentage_error as mape
-from sklearn.metrics import mean_squared_error as mse
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-
-import abc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Set
-from functools import reduce, partial
-import re
-import copy
-import collections
-from collections import defaultdict
 from __future__ import annotations
-import json
+
 import os
 from datetime import datetime
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-from tqdm.notebook import tqdm, trange
-import networkx as nx
+import torch
+from torch import nn
+import torch.utils.data
+from torch.utils.data import DataLoader
+import torchvision
+from torchvision import transforms
 
-sns.set_style('darkgrid')
+from tqdm import trange
+
 
 def update_log(idx, filename):
     timestamp = str(datetime.now())
@@ -45,7 +21,7 @@ def update_log(idx, filename):
     with open(filepath, 'w') as f:
         f.write(f'{timestamp}\t{idx+1}\t{filename}\n')
 
-def get_data(batch_size=64):
+def get_data(batch_size=64, data_dir="./data", num_workers=8):
     """
     Create train and test MNIST loaders.
     """
@@ -55,20 +31,20 @@ def get_data(batch_size=64):
     ])
 
     train_dataset = torchvision.datasets.MNIST(
-        root="./data",
+        root=data_dir,
         train=True,
         download=True,
         transform=transform
     )
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     test_dataset = torchvision.datasets.MNIST(
-        root="./data",
+        root=data_dir,
         train=False,
         download=True,
         transform=transform
     )
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     return train_loader, test_loader
 

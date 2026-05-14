@@ -1,41 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, List, Tuple
+from collections import defaultdict
+
 import torch
 from torch import nn
-from torch.fx import symbolic_trace
-import torch.utils.data
-from torch.utils.data import TensorDataset, DataLoader, Subset, random_split
-import torchvision
-from torchvision import transforms
-import torch.fx as fx
-from torchvision.models import resnet50
 
-import numpy as np
-from scipy.stats import spearmanr, kendalltau
-import sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_percentage_error as mape
-from sklearn.metrics import mean_squared_error as mse
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-
-import abc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Set
-from functools import reduce, partial
-import re
-import copy
-import collections
-from collections import defaultdict
-from __future__ import annotations
-import json
-import os
-from datetime import datetime
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-from tqdm.notebook import tqdm, trange
-import networkx as nx
-
-sns.set_style('darkgrid')
 
 class SurrogateModel(nn.Module):
     def __init__(self, edges: List[Tuple[int, int]], is_poly: bool = False):
@@ -147,3 +117,48 @@ class SurrogateModel(nn.Module):
         else:
             output = out_1st
         return output
+
+    def export_to_uml(self, modules: List[Any], gamma_values: torch.Tensor) -> str:
+        """
+        Generate PlantUML component diagram from (modules, edges).
+        gamma_values: Tensor [E] — edge weight values (e.g. normalized_edge_weights())
+        """
+        lines = []
+        lines.append("@startuml")
+        lines.append("skinparam componentStyle rectangle")
+        lines.append("left to right direction")
+        lines.append("")
+
+        # --- Input node ---
+        lines.append('component "Input -1" as N_minus1')
+
+        # --- Modules ---
+        for idx, module in enumerate(modules):
+            if hasattr(module, "linear"):
+                label = (
+                    f"LinearBlock ({idx})\\n"
+                    f"{module.linear.in_features} → {module.linear.out_features}"
+                )
+            elif module.__class__.__name__ == "IdBlock":
+                label = f"IdBlock (0)"
+            else:
+                label = f"{type(module).__name__} ({idx})"
+
+            lines.append(f'component "{label}" as N_{idx}')
+
+        lines.append("")
+
+        # --- Edges WITH gamma ---
+        for e_idx, (i, j) in enumerate(self.edges):
+            src = "N_minus1" if i == -1 else f"N_{i}"
+            dst = f"N_{j}"
+
+            gamma_val = float(gamma_values[e_idx])
+            gamma_str = f"{gamma_val:.3f}"
+
+            lines.append(f"{src} --> {dst} : {gamma_str}")
+
+        lines.append("")
+        lines.append("@enduml")
+
+        return "\n".join(lines)

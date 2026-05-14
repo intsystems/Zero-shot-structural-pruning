@@ -1,0 +1,36 @@
+defaults:
+  - experiment: small
+  - _self_
+
+experiment:
+  n_iterations_global: 10
+  n_iterations_graph: 2
+  n_iterations_masks: 500
+  mask_prob: 0.5
+
+model:
+  input_dim: 784
+  n_epochs_mnist: 100
+  lr_mnist: 1e-3
+  batch_size_mnist: 256
+
+surrogate:
+  n_epochs_surrogate: 3000
+  lr_surrogate: 1e-3
+  n_epochs_fcn: 1000
+  lr_fcn: 1e-3
+  fcn_dims: [10]
+  batch_size_surrogate: 32
+
+data:
+  data_dir: ./data
+  num_workers: 8
+
+output:
+  output_dir: histories
+
+# "auto" resolves to cuda if available, else cpu
+device: auto
+
+# set to an integer for reproducibility, null to disable
+seed: null

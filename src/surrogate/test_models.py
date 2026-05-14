@@ -1,41 +1,35 @@
-import torch
-from torch import nn
-from torch.fx import symbolic_trace
-import torch.utils.data
-from torch.utils.data import TensorDataset, DataLoader, Subset, random_split
-import torchvision
-from torchvision import transforms
-import torch.fx as fx
-from torchvision.models import resnet50
-
-import numpy as np
-from scipy.stats import spearmanr, kendalltau
-import sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_percentage_error as mape
-from sklearn.metrics import mean_squared_error as mse
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-
-import abc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Set
-from functools import reduce, partial
-import re
-import copy
-import collections
-from collections import defaultdict
 from __future__ import annotations
-import json
-import os
-from datetime import datetime
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-from tqdm.notebook import tqdm, trange
-import networkx as nx
+from collections import defaultdict
 
-sns.set_style('darkgrid')
+import torch
+import numpy as np
+import sklearn
+from sklearn.metrics import mean_squared_error as mse
+
+
+def get_expected_intersection(y_true_top: np.ndarray, preds: np.ndarray, K: int) -> float:
+    """
+    Expected size of the intersection between the true top-K set and the predicted top-K set,
+    averaged over all possible tie-breaking orderings.
+    """
+    # Finding threshold
+    threshold = np.partition(preds, -K)[-K]
+
+    idx_greater = np.where(preds > threshold)[0]  # keep
+    idx_equal = np.where(preds == threshold)[0]    # for sampling
+
+    needed = K - len(idx_greater)
+
+    # Intersects
+    direct_intersect = np.intersect1d(y_true_top, idx_greater).shape[0]
+    equal_intersect = np.intersect1d(y_true_top, idx_equal).shape[0]
+
+    # Expected mean of intersects
+    expected_intersect = direct_intersect + (equal_intersect * (needed / len(idx_equal)))
+
+    return expected_intersect
+
 
 def test_models(name2model, dataset_test, device):
     """
