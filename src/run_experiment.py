@@ -10,11 +10,9 @@ import numpy as np
 from collections import defaultdict
 from sklearn.linear_model import LinearRegression
 
-import hydra
-from omegaconf import DictConfig, OmegaConf
-
 from tqdm import trange
 
+from config import Config, parse_args, to_dict
 from utils import update_log, get_data, train
 from model.random_graph import RandomGraphModel, generate_graph
 from surrogate.dataset import create_surrogate_dataset
@@ -29,8 +27,7 @@ def resolve_device(device_cfg: str) -> str:
     return device_cfg
 
 
-@hydra.main(config_path="conf", config_name="config", version_base=None)
-def main(cfg: DictConfig) -> None:
+def main(cfg: Config) -> None:
     # Resolve device
     device = resolve_device(cfg.device)
 
@@ -164,7 +161,7 @@ def main(cfg: DictConfig) -> None:
     n_iter = cfg.experiment.n_iterations_graph
     os.makedirs(cfg.output.output_dir, exist_ok=True)
     history_to_save = {
-        "config": OmegaConf.to_container(cfg, resolve=True),
+        "config": to_dict(cfg),
         "mnist_losses_history": mnist_losses_history,
         "surrogate_losses_history": surrogate_losses_history,
         "fcn_losses_history": fcn_losses_history,
@@ -190,4 +187,4 @@ def main(cfg: DictConfig) -> None:
 
 
 if __name__ == '__main__':
-    main()
+    main(parse_args())
