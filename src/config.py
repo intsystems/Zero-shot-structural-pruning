@@ -4,10 +4,6 @@ import sys
 from dataclasses import dataclass, field, fields, is_dataclass, asdict
 from typing import Any
 
-
-# ---------------------------------------------------------------------------
-# Config schema (mirrors the previous conf/*.yaml files)
-# ---------------------------------------------------------------------------
 @dataclass
 class ExperimentConfig:
     n_iterations_global: int = 10
@@ -58,9 +54,6 @@ class Config:
     seed: int | None = None
 
 
-# ---------------------------------------------------------------------------
-# Experiment presets (mirrors conf/experiment/*.yaml)
-# ---------------------------------------------------------------------------
 EXPERIMENT_PRESETS: dict[str, dict[str, Any]] = {
     "small": {"n_iterations_graph": 2},     # ~15 edges
     "medium": {"n_iterations_graph": 5},    # ~30 edges
@@ -69,9 +62,6 @@ EXPERIMENT_PRESETS: dict[str, dict[str, Any]] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _parse_value(text: str) -> Any:
     """Parse a CLI string into an appropriate Python type."""
     lowered = text.lower()
