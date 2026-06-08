@@ -15,7 +15,7 @@ from tqdm import trange
 from config import Config, parse_args, to_dict
 from utils import update_log, get_data, train
 from model.random_graph import RandomGraphModel, generate_graph
-from surrogate.dataset import create_surrogate_dataset
+from surrogate.dataset import create_surrogate_dataset_bern
 from surrogate.graph_model import SurrogateModel
 from surrogate.fcn_model import create_surrogate_fcn_model
 from surrogate.test_models import test_models, collect_model_stats, get_expected_intersection
@@ -77,7 +77,7 @@ def main(cfg: Config) -> None:
         ))
 
         # Creating a dataset for surrogate model
-        surrogate_dataset_train, surrogate_dataset_test = create_surrogate_dataset(
+        surrogate_dataset_train, surrogate_dataset_test = create_surrogate_dataset_bern(
             model, test_loader, nn.CrossEntropyLoss(),
             cfg.experiment.n_iterations_masks,
             cfg.experiment.mask_prob,

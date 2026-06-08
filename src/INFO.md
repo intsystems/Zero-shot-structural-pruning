@@ -23,3 +23,6 @@ Run all four sizes
     for exp in small medium large xlarge; do
         python run_experiment.py experiment=$exp
     done
+
+> Конфигурация описана в `config.py` (обычные dataclasses, без hydra).
+> Переопределения значений задаются в стиле `key=value` / `section.key=value`.
