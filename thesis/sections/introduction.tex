@@ -1,0 +1,32 @@
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{Introduction}
+\section*{Introduction}
+
+Training neural networks requires increasingly large amounts of computational resources \cite{Sevilla2022}. Developing and training models with novel architectures can be particularly challenging under limited computational budgets \cite{Tan2019}. In addition, edge computing applications require neural network inference to be performed on resource-constrained portable devices \cite{BanjanovicMehmedovic2023}. Consequently, there is a growing need to improve both the generalization performance and the inference efficiency of neural networks. One of the approaches to addressing the issues mentioned above is model pruning.
+
+By pruning, we mean the task of reducing the size of a network by removing parameters \cite{Liang2021}. Pruning is generally classified into unstructured~\cite{Liu2021,Wang2020} and structured~\cite{You2019,Ma2023} approaches. In the first case, individual irrelevant weights are set to zero, whereas in the second case, entire groups of parameters are removed from the neural network. Several methods for unstructured pruning have been proposed \cite{inproceedings,Hassibi1992,zeng2019mlprune,Han2015}. Most of them rely on removing weights according to an importance criterion, for example, weight magnitude \cite{Han2015,Lubana2020}, norm-based criteria \cite{He2018}, or estimated loss change \cite{Molchanov2016,Hassibi1992}.
+
+Although unstructured pruning helps reduce the computational cost of inference \cite{Han2015}, pruning models with novel architectures remains challenging, especially when dependent layers must be removed simultaneously. This issue is investigated in \cite{Fang2023}, where structural pruning is performed by constructing a dependency graph to explicitly model inter-layer dependencies and to group coupled parameters for joint pruning. Other works review the structural pruning problem and propose methods that either do not use dataset information \cite{Tanaka2020,Yvinec2021} or rely only on a small number of samples \cite{Tanaka2020,He2022}. The goal is to perform pruning in a zero-shot setting, i.e., without fine-tuning \cite{Chen2021,Liu2022}. However, some existing methods are designed for specific architectures, which poses a significant obstacle to applying such algorithms across diverse problems \cite{Frantar2023,Wang2019}.
+
+In this paper, we investigate the problem of structural pruning. We represent the computation graph as a directed graph whose vertices correspond to network layers (see Fig.~\ref{information_graph}). The proposed method is based on analysis the deep learning computation graph and estimating the information flow propagated through it. Our goal is to perform structural pruning for arbitrary neural network architectures without restricting the method to a specific family of models. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using only a small subset of data passed through the analyzed model.
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=0.8\textwidth]{figs/information_graph.eps}
+\caption{A schematic illustration of a residual connection and the corresponding surrogate model graph. A coefficient $\boldsymbol{\gamma}_{ij}$ is assigned to each edge; the collection of these coefficients determines the optimized graph structure.}
+\label{information_graph}
+\end{figure}
+
+The computational experiments are conducted on the MNIST dataset~\cite{Deng2012}. The proposed method outperforms surrogate-based baselines that do not replicate the structure of the original model, achieving $1.5\times$ higher correlation metrics.
+
+This improvement is further illustrated using correlation coefficients and scatter plots.
+
+Our main contributions are:
+\begin{enumerate}
+\item We propose a surrogate-based structural pruning method that explicitly incorporates information from the neural network computation graph. The method represents the model as a directed computational graph and introduces structural constraints on the surrogate model derived from the information flow within this graph.
+
+\item We empirically demonstrate that the proposed graph-based constraints improve surrogate reliability in the few-shot setting, enabling more stable and interpretable estimation of operation importance for structural pruning.
+
+\item We validate the proposed approach on multiple models trained on the MNIST dataset~\cite{Deng2012}. To assess the generality of the method, we consider randomly generated computational graphs inspired by neural architecture search~\cite{Zoph2017} search spaces and show that incorporating computation graph information leads to improved performance compared to surrogate models that ignore the original model structure.
+\end{enumerate}

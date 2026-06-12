@@ -1,0 +1,10 @@
+\section{Discussion}
+\begin{enumerate}
+    \item Incorporating information from the computation graph is important for structural pruning.
+    
+    \item We can consider graph information as a prior (in the context of Bayesian inference) or as an inductive bias hardwired into the model (as in our case).
+    
+    \item Despite the imperfect results, we observe that the method works more effectively than the considered baselines, which can be explained by the incorporation of structural information. This is particularly important in the few-shot setting, i.e., when the model is trained on only a small number of samples.
+    
+    \item Empirically, a shift toward zero is observed as the number of edges increases. However, for pruning it is more important to preserve the ordering of importance scores than their absolute values. This shift can be corrected in a post-processing step.
+\end{enumerate}

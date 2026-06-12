@@ -1,0 +1,56 @@
+\documentclass[a4paper,14pt,oneside,openany]{extarticle}
+
+\input{preamble}
+\input{newcommands}
+
+\begin{document}
+\onehalfspacing % полуторный интервал
+
+%%% Титульный лист
+\setcounter{page}{2}
+
+%%% Настройка размеров шрифтов
+\makeatletter
+\renewcommand\Huge{\@setfontsize\Huge{14pt}{1.5}}
+\renewcommand\huge{\@setfontsize\huge{14pt}{1.5}}
+\renewcommand\Large{\@setfontsize\Large{14pt}{1.5}}
+\renewcommand\large{\@setfontsize\large{14pt}{1.5}}
+\makeatother
+
+%%% Аннотация
+\newpage
+\input{sections/abstract}
+
+%%% Оглавление
+\newpage
+\begingroup
+\hypersetup{linkcolor=black}
+\tableofcontents
+\endgroup
+
+
+%%% Введение
+\newpage
+\input{sections/introduction}
+
+\newpage
+\input{sections/section1}
+
+\newpage
+\input{sections/section2}
+
+\newpage
+\input{sections/section3}
+
+%%% Заключение
+\newpage
+\input{sections/conclusion}
+
+\newpage
+\input{sections/acknowledgements}
+
+%%% Список литературы
+\newpage
+\input{sections/references}
+
+\end{document}

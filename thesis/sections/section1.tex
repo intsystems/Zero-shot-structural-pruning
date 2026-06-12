@@ -1,0 +1,54 @@
+\section{Problem statement}
+
+We address the problem of structural pruning in deep neural networks formulated in terms of their computation graphs. We define the \textbf{computation graph} of a neural network as a directed graph $G_{computation} = (V, E)$, where each vertex $v_i \in V$ corresponds to a layer (or computational module) of the network, and each directed edge $e_{ij} \in E$ represents the data flow from the output of layer $v_i$ to the input of layer $v_j$. Formally,
+\begin{equation}
+e_{ij} \in E 
+\quad \Leftrightarrow \quad 
+\mathbf{h}_j = \mathbf{f}_j(\mathbf{h}_i, \mathbf{w}_j),
+\end{equation}
+where $\mathbf{h}_i$ denotes the activation produced by vertex $v_i$, and $\mathbf{f}_j$ is the transformation implemented at vertex $v_j$. In this formulation, removing a vertex corresponds to eliminating the entire layer from the network, whereas removing an edge corresponds to removing a data dependency between two layers (e.g., in residual or multi-branch architectures).
+
+We consider the scenario of \textbf{edge removal}~--- deleting selected connections $e_{ij} \in E$ in order to reduce memory consumption and computational cost, possibly at the expense of predictive accuracy. Alternatively, one may prune either vertices, which correspond to layers in the source model, respectively. These pruning strategies can be reduced to one another.
+
+Let the dataset be denoted by $\mathfrak{D} = (\mathbf{X}, \mathbf{y})$, where $\mathbf{X} \in \mathbb{R}^{m \times n}$ is the matrix of input features and $\mathbf{y} \in \mathbb{R}^m$ is the vector of target variables. Let $\mathbf{w} \in \mathbb{R}^k$ be the vector of model parameters. The model is trained by minimizing the error function
+\begin{equation}
+S = S(\mathbf{w} \mid \mathfrak{D}, f).
+\end{equation}
+
+After pruning, we obtain a modified parameter vector $\mathbf{w}' \in \mathbb{R}^k$, in which certain groups of parameters are set to zero, corresponding to removed edges or vertices in the computation graph. The challenge of structural pruning lies in estimating the importance of parameter groups in terms of their contribution to the network information flow and the final predictive performance.
+
+The following baselines can be found in the literature:
+\begin{enumerate}
+    \item \textbf{Loss-based pruning}~--- directly measuring the post-pruning error difference and selecting $\mathbf{w}'$ to minimize the performance drop:
+    \begin{equation}
+    \label{eq:loss_pruning}
+    \min_{\mathbf{w}' \in \mathbb{R}^k}
+    \left|
+    S(\mathbf{w}' \mid \mathfrak{D}, f)
+    -
+    S(\mathbf{w} \mid \mathfrak{D}, f)
+    \right|.
+    \end{equation}
+    This objective leads to a combinatorial optimization problem and is therefore computationally intractable in practice \cite{Molchanov2019}.
+
+    \item \textbf{Magnitude-based pruning}~--- removing parameters with the smallest magnitudes. This approach is based on the assumption that the magnitude of a parameter correlates with its importance \cite{Han2015}. In practice, the $L_1$-norm is often used to estimate parameter importance.
+    
+    \item \textbf{Taylor-based pruning}~--- estimating the impact of pruning using a second-order Taylor expansion of the error function around $\mathbf{w}$:
+    \begin{equation}
+    S(\mathbf{w}')
+    \approx
+    S(\mathbf{w})
+    +
+    \langle \nabla S(\mathbf{w}), \Delta \mathbf{w} \rangle
+    +
+    \frac{1}{2}
+    \Delta \mathbf{w}^{\mathsf{T}}
+    \mathbf{H}
+    \Delta \mathbf{w},
+    \end{equation}
+    where $\nabla S(\mathbf{w})$ is the gradient of the error function and $\mathbf{H} = \nabla^2 S(\mathbf{w})$ is the corresponding Hessian matrix \cite{Molchanov2019}.
+\end{enumerate}
+
+The use of local pruning methods often leads to a degradation in performance when multiple layers are pruned simultaneously~\cite{You2019}. Therefore, \textbf{Magnitude-based pruning} and \textbf{Taylor-based pruning} are not well suited for large-scale structural pruning.
+
+The problem is therefore to design an importance estimation strategy for parameter groups that enables effective structural pruning, i.e., maximizes the reduction in model size and computational complexity while keeping the increase in the error function within acceptable bounds.

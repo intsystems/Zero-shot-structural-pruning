@@ -1,0 +1,182 @@
+\section{Structural pruning using computation graph information}
+
+Let the dataset be denoted by
+\begin{equation}
+\mathfrak{D} = \mathfrak{D}_{\text{train}} \cup \mathfrak{D}_{\text{val}}.
+\end{equation}
+
+We employ the loss-based pruning method defined by the optimization problem~(\ref{eq:loss_pruning}).
+
+
+
+The proposed pruning algorithm constructs a \textbf{surrogate graph model} $G(\boldsymbol{\gamma}, \mathbf{M})$ that replicates the structure of the original neural network. The graph is derived from the computation graph of the model. For each edge $e_{ij} \in E$, introduce a continuous importance coefficient $\boldsymbol{\gamma}_{ij} \in [0,1]$. 
+Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ indicating whether an edge is pruned (see Fig.~\ref{residual_graph}). Formally,
+\begin{equation}
+\mathbf{M}_{ij} =0 
+\quad \Leftrightarrow \quad 
+\boldsymbol{\gamma}_{ij} = 0.
+\end{equation}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figs/pruning_graph.eps}
+\caption{Simplified schematic of a residual connection. A coefficient $\boldsymbol{\gamma}_{ij}$ is assigned to each edge; smaller values of $\boldsymbol{\gamma}_{ij}$ indicate lower edge importance.}
+\label{residual_graph}
+\end{figure}
+
+\begin{lemma}
+\label{lem:graph_model}
+The graph model $G(\boldsymbol{\gamma}, \mathbf{M})$ can be represented as
+\begin{equation}
+G(\boldsymbol{\gamma}, \mathbf{M})[\mathbf{x}] = \mathbf{x} \cdot \sum_{p \in P} \prod_{(i,j) \in p} \left( \boldsymbol{\gamma}_{ij} \cdot \mathbf{M}_{ij} \right),
+\end{equation}
+where $P$~--- the set of all paths in the graph.
+\end{lemma}
+
+\begin{proof}
+Consider an arbitrary path $p \in P$. During the forward pass, the input $\mathbf{x}$ is multiplied by the edge weights $\boldsymbol{\gamma}_{ij}$ and the corresponding masks $\mathbf{M}_{ij}$ along the path $p$:
+\begin{equation}
+\mathbf{x} \cdot \prod_{(i,j) \in p} \left( \boldsymbol{\gamma}_{ij} \cdot \mathbf{M}_{ij} \right).
+\end{equation}
+
+Summing these contributions over all paths yields the desired expression.
+\end{proof}
+
+We prove the following theorem describing the local behavior of the model.
+
+\begin{theorem}
+Let $\mathbf{M}=\mathbf{1}$ denote the full mask, i.e.,
+\begin{equation}
+\forall (i,j)\in E:\ \mathbf{M}_{ij}=1.
+\end{equation}
+
+Then, in a neighborhood of the point $\mathbf{M}=\mathbf{1}$, the error function $S$ can be approximated by the Taylor expansion associated with the graph structure:
+
+\begin{equation}
+\begin{split}
+S(\mathbf{M}) =
+&\sum_{(i,j) \in E}
+\frac{\partial G}{\partial \mathbf{M}_{ij}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+(\mathbf{M}_{ij} - 1)
+\\
+&+ \frac{1}{2}
+\sum_{(i,j) \in E}
+\sum_{(k,l) \in E}
+\frac{\partial^2 G}
+{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+(\mathbf{M}_{ij} - 1)(\mathbf{M}_{kl} - 1)
+\\
+&+ o(\|\mathbf{M} - \mathbf{1}\|^2).
+\end{split}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For simplicity, consider the scalar-output case.
+
+As discussed above, consider the model represented as a directed acyclic graph. Let $\mathbf{w}_p(\mathbf{x})$ represent the input-dependent contribution of the path $p$ to the network's behavior. Then the model output can be written as
+
+\begin{equation}
+f(\mathbf{x},\mathbf{M})
+=
+\sum_{p \in P}
+\mathbf{w}_p(\mathbf{x})
+\prod_{(i,j)\in p} \mathbf{M}_{ij}.
+\end{equation}
+
+Differentiating with respect to the mask variables in a neighborhood of the point $\mathbf{M}=\mathbf{1}$, we obtain
+\begin{equation}
+\frac{\partial f}{\partial \mathbf{M}_{ij}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+=
+\sum_{p \in P,\ (i,j)\in p}
+\mathbf{w}_p(\mathbf{x}),
+\end{equation}
+
+\begin{equation}
+\label{eq:second_derivative_model}
+\frac{\partial^2 f}
+{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+=
+\sum_{p \in P,\ \{(i,j),(k,l)\}\subset p}
+\mathbf{w}_p(\mathbf{x}).
+\end{equation}
+
+Using Lemma~\ref{lem:graph_model}, the corresponding derivatives of the graph model are
+\begin{equation}
+\frac{\partial G}{\partial \mathbf{M}_{ij}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+=
+\mathbf{x}
+\sum_{p \in P,\ (i,j)\in p}
+\prod_{(i',j')\in p}
+\boldsymbol{\gamma}_{i'j'},
+\end{equation}
+
+\begin{equation}
+\label{eq:second_derivative_error}
+\frac{\partial^2 G}
+{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+=
+\mathbf{x}
+\sum_{p \in P,\ \{(i,j),(k,l)\}\subset p}
+\prod_{(i',j')\in p}
+\boldsymbol{\gamma}_{i'j'}.
+\end{equation}
+
+Differentiating the error function $S$ twice with respect to the mask variables in a neighborhood of the point $\mathbf{M}=\mathbf{1}$ yields
+\begin{equation}
+\frac{\partial^2 S}
+{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
+\Bigg|_{\mathbf{M}=\mathbf{1}}
+=
+\frac{\partial \mathcal{L}}{\partial f}
+\cdot
+\frac{\partial^2 f}
+{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
++
+\frac{\partial^2 \mathcal{L}}{\partial f^2}
+\cdot
+\frac{\partial f}{\partial \mathbf{M}_{ij}}
+\cdot
+\frac{\partial f}{\partial \mathbf{M}_{kl}},
+\end{equation}
+where $\mathcal{L}$ is a twice differentiable loss function.
+
+Observe that the second derivatives in~(\ref{eq:second_derivative_model}) and~(\ref{eq:second_derivative_error}) share the same path-inclusion condition,
+\begin{equation}
+\{(i,j),(k,l)\}\subset p.
+\end{equation}
+
+These derivatives are nonzero if and only if there exists at least one path $p \in P$ containing both edges $(i,j)$ and $(k,l)$. Therefore, the local dependency structure between mask variables is determined solely by the graph topology. Consequently, the error function preserves the local dependency structure induced by the computational graph.
+\end{proof}
+
+\begin{proposition}
+We impose the following normalization constraint on the outgoing edges of each vertex:
+\begin{equation}
+\sum_{j:\ e_{ij}\in E}\boldsymbol{\gamma}_{ij}=1.
+\end{equation}
+\end{proposition}
+
+The method is based on optimizing this surrogate graph model. The final optimization problem is formulated as
+\begin{equation}
+\begin{aligned}
+\boldsymbol{\gamma}
+=
+\arg\min_{\boldsymbol{\gamma} \in [0,1]^{|E|}}
+\quad
+& \mathsf{E}_{\mathbf{M}}
+\left\|
+G(\boldsymbol{\gamma}, \mathbf{M})
+-
+S(\mathbf{w} \mid \mathfrak{D}, f)
+\right\|_2^2
+\\
+\textrm{s.t.} \quad
+&
+\sum_{j:\ e_{ij} \in E} \boldsymbol{\gamma}_{ij} = 1.
+\end{aligned}
+\end{equation}

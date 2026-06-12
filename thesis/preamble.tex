@@ -1,0 +1,154 @@
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+% \usepackage{cmap}
+\usepackage{url}
+\usepackage{upgreek}
+\usepackage{booktabs}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage[square,sort,comma,numbers]{natbib}
+\usepackage{doi}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+
+% Algorithms
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+
+%% Шрифты
+\usepackage{euscript} % Шрифт Евклид
+\usepackage{mathrsfs} % Красивый матшрифт
+\usepackage{extsizes}
+
+\usepackage{makecell} % diaghead in a table
+\usepackage{amsmath,amsfonts,amssymb,amsthm,mathtools,dsfont}
+\usepackage{icomma}
+
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\definecolor{linkcolor}{rgb}{0.9,0,0}
+\definecolor{citecolor}{rgb}{0,0.6,0}
+\definecolor{urlcolor}{rgb}{0,0,1}
+
+\hypersetup{
+	unicode=true,
+	pdftitle={TITLE},
+	pdfauthor={AUTHOR},
+	pdfkeywords={KEYWORDS},
+	colorlinks=true,
+	linkcolor=linkcolor,        % внутренние ссылки
+	citecolor=citecolor,         % на библиографию
+	urlcolor=urlcolor           % на URL
+}
+
+\graphicspath{{figs}}
+
+\usepackage{enumitem} % Для модификаций перечневых окружений
+\usepackage{etoolbox}
+
+\makeatletter
+\expandafter\patchcmd\csname\string\algorithmic\endcsname{\itemsep\z@}{\itemsep=1.5mm}{}{}
+\makeatother
+
+\usepackage{geometry}
+\geometry{a4paper, top=2cm, bottom=2cm, left=2.5cm, right=1cm}
+\setlength\parindent{5ex}    % Устанавливает длину красной строки 15pt
+%\linespread{1.3}             % Коэффициент межстрочного интервала
+\usepackage{setspace}
+\usepackage[center]{titlesec} % секции посередине
+
+%%% Убираем точки из счётчиков (чтобы \ref не добавлял точку автоматически)
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}
+
+%%% Возвращаем точки только в заголовки разделов (для оформления/ГОСТа)
+\usepackage{titlesec} % убедитесь, что пакет загружен один раз
+\titleformat{\section}{\centering\bfseries}{\thesection.}{1em}{}
+\titleformat{\subsection}{\centering\bfseries}{\thesubsection.}{1em}{}
+\titleformat{\subsubsection}{\centering\bfseries}{\thesubsubsection.}{1em}{}
+
+\usepackage{icomma}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{color}
+%\usepackage{bm}
+\usepackage{tabularx}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{indentfirst}
+\usepackage{accents}
+
+% Теоремы
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem*{exercise}{Упражнение}
+\newtheorem*{problem}{Задача}
+
+\newtheorem{definition}{Definition}
+\newtheorem*{corollary}{Следствие}
+\newtheorem*{note}{Замечание}
+\newtheorem*{reminder}{Напоминание}
+\newtheorem*{example}{Пример}
+\newtheorem*{cexample}{Контрпример}
+\newtheorem*{solution}{Решение}
+
+\renewcommand{\abstractname}{Abstract}
+
+% Индикаторная функция (дублирующее определение для надёжности)
+\providecommand{\ind}{\mathds{1}}
+
+% Защита от отсутствующих определений месяцев и служебных команд
+% в стилях библиографии (utf8gost71u.bst использует \bblapr, \bblmar и т.п.,
+% которые не всегда определяются babel-russian в полном объёме).
+\AtBeginDocument{%
+  \providecommand{\bbljan}{январь}%
+  \providecommand{\bblfeb}{февраль}%
+  \providecommand{\bblmar}{март}%
+  \providecommand{\bblapr}{апрель}%
+  \providecommand{\bblmay}{май}%
+  \providecommand{\bbljun}{июнь}%
+  \providecommand{\bbljul}{июль}%
+  \providecommand{\bblaug}{август}%
+  \providecommand{\bblsep}{сентябрь}%
+  \providecommand{\bbloct}{октябрь}%
+  \providecommand{\bblnov}{ноябрь}%
+  \providecommand{\bbldec}{декабрь}%
+  % Дополнительные команды, ожидаемые ГОСТ-стилем
+  \providecommand{\bbland}{и}%
+  \providecommand{\bbletal}{и др.}%
+  \providecommand{\bblvol}{Т.}%
+  \providecommand{\bblno}{№}%
+  \providecommand{\bblpages}{с.}%
+  \providecommand{\bblpp}{С.}%
+  \providecommand{\bbleditor}{ред.}%
+  \providecommand{\bbleditors}{ред.}%
+  \providecommand{\bblch}{гл.}%
+  \providecommand{\bbltechreport}{Технический отчёт}%
+  \providecommand{\bblmastersthesis}{Магистерская диссертация}%
+  \providecommand{\bblphdthesis}{Дис.\,\dots\,канд. наук}%
+  \providecommand{\bblinpress}{в печати}%
+  \providecommand{\bblsubmitted}{отправлено в печать}%
+  \providecommand{\bblforthcoming}{принято к печати}%
+  \providecommand{\bblavailablefrom}{Режим доступа}%
+  \providecommand{\bblnoaddress}{Б.м.}%
+  \providecommand{\bblnopublisher}{Б.и.}%
+  \providecommand{\bbljour}{Журн.}%
+  \providecommand{\bblOthers}{и др.}%
+}
