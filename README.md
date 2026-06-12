@@ -5,11 +5,14 @@ Supervisor: [Oleg Bakhteev, PhD](https://bahleg.site/publications)
 |  |  Link |
 | :---: | :---: |
 | Paper |  [link](https://github.com/intsystems/Zero-shot-structural-pruning/blob/master/paper/main.pdf) |
-| Code | [link](https://github.com/intsystems/Zero-shot-structural-pruning/tree/master/notebooks) |
+| Thesis |  [link](https://github.com/intsystems/Zero-shot-structural-pruning/blob/master/thesis/thesis.pdf) |
+| Code | [link](https://github.com/intsystems/Zero-shot-structural-pruning/tree/master/src) |
 | Slides | [link](https://github.com/intsystems/Zero-shot-structural-pruning/blob/master/slides/slides.pdf) |
 
 ## Abstract
-This paper investigates the problem of structural pruning in neural networks. Structural pruning is the procedure of removing entire groups of parameters from a neural network, for example, filters in CNNs or skip connections. An appropriate pruning strategy can improve both generalization performance and inference efficiency. The main difficulty of structural pruning lies in the fact that when a layer is removed, all dependent layers must also be removed or consistently modified. 
+This paper investigated the problem of structural pruning in neural networks. 
+The proposed method is based on analyzing the deep learning computation graph and estimating the information flow propagated through it. 
+The method enables the estimation of the importance of operations in a computation graph in a few-shot setting. 
 
-The proposed method is based on the analysis of the deep learning computation graph and the estimation of the information flow propagated through it. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using several forward passes of a data subset through the analyzed model. To demonstrate the effectiveness of the proposed method, we conduct multiple experiments on the MNIST dataset.
+Experiments have shown that the method is superior to surrogate models that do not use computation graph information. It is also possible to fine-tune the model after pruning, which can significantly improve its performance. Thus, the important role of computation graph information in structural pruning has been demonstrated. In future work, we plan to extend and generalize the method to channel-wise pruning (for example, filters in CNNs).
 

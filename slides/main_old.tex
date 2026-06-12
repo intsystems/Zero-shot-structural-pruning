@@ -1,0 +1,217 @@
+\documentclass[aspectratio=169]{beamer}
+\beamertemplatenavigationsymbolsempty
+\usecolortheme{beaver}
+\setbeamertemplate{blocks}[rounded=true, shadow=true]
+\setbeamertemplate{footline}[page number]
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage[english,russian]{babel}
+\usepackage{xcolor}
+
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,amsfonts,amsmath,mathtext}
+%\usepackage{subfig}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{quotes}
+\usepackage{tikzscale}
+\usepackage{scalefnt}
+\usepackage{xcolor}
+\usepackage[all]{xy} % xy package for diagrams
+\usepackage{array}
+\usepackage{multicol}% many columns in slide
+\usepackage{hyperref}% urls
+\usepackage{hhline}%tables
+\usepackage{booktabs}
+% \usepackage{biblatex}
+
+
+
+\def\bw{\mathbf{w}}
+\def\balpha{\boldsymbol{\alpha}}
+\def\ltrn{\mathcal{L}_{\mathrm{train}}}
+\def\lval{\mathcal{L}_{\mathrm{val}}}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+
+
+\definecolor{dark_green}{rgb}{0, 0.788, 0}
+\definecolor{dark_red}{rgb}{0.9, 0, 0}
+
+
+% Your figures are here:
+\graphicspath{ {fig/} {../fig/} }
+
+\definecolor{ao(english)}{rgb}{0.0, 0.5, 0.0}
+\definecolor{bleudefrance}{rgb}{0.19, 0.55, 0.91}
+
+%----------------------------------------------------------------------------------------------------------
+
+\title[\hbox to 56mm{Structural pruning}]{Структурное прореживание моделей глубокого обучения на основе суррогатных моделей}
+
+\author{М.\,О.~Иванов\inst{} \\
+\tt{\footnotesize ivanov.mo@phystech.edu }}
+\institute{\inst{} Москва, Московский физико-технический институт \\
+\textbf{Научный руководитель}: к.ф.-м.н. Бахтеев Олег Юрьевич} \date{2026}
+%----------------------------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+\thispagestyle{empty}
+\maketitle
+\end{frame}
+%-----------------------------------------------------------------------------------------------------
+\begin{frame}{Цель исследования}
+
+\begin{block}{Цель} 
+  Предложить метод структурного прореживания нейросетей.
+\end{block}
+
+~\\
+\begin{block}{Проблема}
+  Существующие методы работают послойно. Учёт взаимосвязей между слоями модели является вычислительно сложной задачей.
+\end{block}
+~\\
+\begin{block}{Метод решения}
+  Предлагаемый метод основан на построении суррогатной графовой модели, повторяющей структуру исходной нейросети.
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Схема предлагаемого решения}
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            Упрощённая схема residual connection и соответствующей суррогатной графовой модели. 
+            Каждому ребру сопоставляется $\gamma$, 
+            по множеству которых граф оптимизируется.
+        \end{column}
+        \begin{column}{0.6\textwidth}
+            \includegraphics[width=\linewidth]{figs/information_graph.eps}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+
+
+\begin{frame}{Постановка задачи}
+\begin{itemize}
+\item Архитектура модели представляет собой ориентированный ациклический граф $G = (V, E)$. Каждая вершина $v_i \in V$ соответствует слою нейронной сети, и каждое ребро $e_{ij} \in E$ представляет поток данных из выхода слоя $v_i$ до входа $v_j$. 
+
+\item В данной формулировке удаление вершины означает удаление соответствующего слоя из сети, тогда как удаление ребра к устранению зависимости передачи данных между слоями (например, в случае residual connection).
+
+\item Задана выборка $\mathfrak{D} = \mathfrak{D}_\text{train} \cup \mathfrak{D}_\text{val}$. Задана функция потерь $\mathcal{L}$. Пусть $\boldsymbol w$ -- параметры модели до прунинга, а $\boldsymbol w'$ -- параметры модели после. Задача оптимизации
+$$\min_{\boldsymbol w' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathfrak{D} \mid \boldsymbol w') - \mathcal{L}(\mathfrak{D} \mid \boldsymbol w) \right|.$$
+
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Предлагаемый метод}
+    \begin{itemize}
+        \item Пусть задано $\gamma_{ij} \in [0, 1]$ для каждого ребра $e_{ij} \in E$. Также для графа $G$ задана маска рёбер $\boldsymbol M \in \mathbb{Z}_2^{|E|}$:
+        $$ (\boldsymbol M)_{ij} = 1 \quad \Leftrightarrow \quad \gamma_{ij} = 0.$$
+
+        \item Дополнительно накладываем следующее ограничение на исходящие ребра каждой вершины:
+        $$ \sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1 $$
+
+        \item Тогда оптимизационная задача:
+        $$ \begin{aligned}
+        \gamma = \arg\min\limits_{\gamma \in [0, 1]^{|E|}} \quad & \left( \mathsf{E}_{\boldsymbol M} \left\| G(\gamma, \boldsymbol M) - \mathcal{L}(\boldsymbol M)) \right\|^2_2 \right) \\ \textrm{s.t.} \quad & \sum_{j:\ e_{ij} \in E} \gamma_{ij} = 1.
+        \end{aligned}
+        $$
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Постановка эксперимента}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+            \item Цель -- сравнение качества базовых суррогатных моделей для предложенного метода.
+
+            \vspace{10pt}
+            
+            \item В сравнении участвуют следующие базовые методы:
+                \begin{small}
+                \begin{itemize} 
+                \item \textbf{(Graph)}: Предложенный метод,
+                \item \textbf{(FCN)}: Простая нейросеть,
+                \item \textbf{(Linear)}: Линейная регрессия,
+                \item \textbf{(L1)}: Метод, основанный на измерении величин параметров,
+                \item \textbf{(Taylor)}: Метод, использующий приближение Тейлора до 1-го и 2-го порядков.
+                \end{itemize}
+              \end{small}
+          \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \includegraphics[width=\linewidth]{figs/graph_example_1.eps}
+            
+            В эксперименте проводилась оптимизация суррогатных моделей, построенных на основе семплированных графов из нод $\text{ReLU}(\text{Linear}(x))$.
+        \end{column}
+    \end{columns}
+
+
+  
+\end{frame}
+
+\begin{frame}{Результаты эксперимента}
+  \begin{itemize}
+    \item Рассматриваются задачи классификации изображений из датасета MNIST.
+    \item Приводятся значения коэффициентов корреляции Кендалла между истинными и прогнозируемыми значениями ошибок.
+  \end{itemize}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{|r|c|c|c|c|}
+    \hline
+    \bfseries Model & 10--15 edges & 20--40 edges & 50--100 edges & more than 100 edges \\
+    \hline
+    Graph  & 0.253 $\pm$ 0.202 & 0.242 $\pm$ 0.146 & \textbf{0.282} $\pm$ 0.105 & \textbf{0.329} $\pm$ 0.045 \\
+    FCN & $-0.011$ $\pm$ 0.151 & $-0.042$ $\pm$ 0.128 & $-0.020$ $\pm$ 0.061 & $-0.036$ $\pm$ 0.066 \\
+    Linear & 0.039 $\pm$ 0.135 & 0.137 $\pm$ 0.083 & 0.167 $\pm$ 0.061 & 0.199 $\pm$ 0.032 \\
+    L1 & \textbf{0.401} $\pm$ 0.057 & \textbf{0.353} $\pm$ 0.049 & 0.259 $\pm$ 0.041 & 0.192 $\pm$ 0.057 \\
+    Taylor & 0.094 $\pm$ 0.182 & $-0.033$ $\pm$ 0.055 & $-0.090$ $\pm$ 0.051 & $-0.136$ $\pm$ 0.030 \\
+    \hline
+    \end{tabular}
+  \end{table}
+  Из таблицы видно, что предложенный метод демонстрирует высокую эффективность при решении предложенной задачи. 
+  
+\end{frame}
+
+\begin{frame}{Результаты эксперимента}
+    \begin{figure}
+    \includegraphics[width=0.9\textwidth]{figs/graph_1_iter_2_experiment_6.eps}
+    
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/graph_2_iter_2_experiment_6.eps}
+    
+    График истинных и прогнозируемых значений ошибок для сравнения методов. Используется модель с 10--15 рёбрами.
+    \label{graph_iter_2}
+    \end{figure}
+\end{frame}
+
+
+\begin{frame}{Заключение}
+    \begin{itemize}
+      \item Рассмотрена задача структурного прореживания нейросетей.
+      \vspace{10pt}
+      \item Предложен метод структурного прореживания нейросетей на основе суррогатных моделей.
+      \vspace{10pt}
+      \item Эксперименты показали, что предложенный метод превосходит суррогатные модели, которые не используют информацию о вычислительном графе.
+      \vspace{10pt}
+      \item Планируется расширить и обобщить этот метод для прореживания по каналам (например, по фильтрам в свёрточных нейросетях).
+      \vspace{10pt}
+      \item Планируется подача в рецензируемый журнал.
+    \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------------------------
+\end{document} 

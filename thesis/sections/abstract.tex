@@ -1,0 +1,9 @@
+\begin{center}
+    \Large{\textbf{Abstract}}
+\end{center}
+
+\begin{singlespace}
+The paper investigates the problem of structural pruning in neural networks. Structural pruning is the procedure of removing entire groups of parameters from a neural network, for example, filters in CNNs or skip connections. An appropriate pruning strategy can improve both generalization performance and inference efficiency. The main difficulty of structural pruning is that removing a layer requires removing or consistently modifying all dependent layers.
+
+The proposed method is based on the analysis of the deep learning computation graph and the estimation of the information flow propagated through it. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using several forward passes of a data subset through the analyzed model. To demonstrate the effectiveness of the proposed method, we conduct multiple experiments on the MNIST dataset.
+\end{singlespace}
