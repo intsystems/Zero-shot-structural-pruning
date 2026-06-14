@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import copy
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 import torch
 from torch import nn
