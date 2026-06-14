@@ -17,7 +17,7 @@ class RandomGraphModel(nn.Module):
         self.layers = nn.ModuleList(modules)
         self.edges = edges  # list (i, j)
         self.collect_stats = collect_stats
-        self.edge_mask = edge_mask
+        self.edge_mask = torch.ones(len(edges))
 
         if collect_stats:
             self.register_buffer(
@@ -61,12 +61,12 @@ class RandomGraphModel(nn.Module):
             # Delete gradients
             self.edge_gates.grad.zero_()
 
-    def forward(self, x, edge_mask):
+    def forward(self, x, edge_mask=None):
         """
         x: input tensor
         edge_mask: Tensor [num_edges]
         """
-        if self.edge_mask:
+        if not edge_mask:
             edge_mask = self.edge_mask
         
         node_outputs = {}
