@@ -49,6 +49,7 @@ def main(cfg: Config) -> None:
     mnist_losses_history = []
     surrogate_losses_history = []
     fcn_losses_history = []
+    finetuning_history = []
     metric_results = defaultdict(list)
     preds_results = defaultdict(list)
     y_true_all = []
@@ -159,18 +160,18 @@ def main(cfg: Config) -> None:
             exp_10 = get_expected_intersection(true_top10, preds_np, n_models_10)
             topk_results[name_model][0] += exp_5 / cfg.experiment.n_iterations_global
             topk_results[name_model][1] += exp_10 / cfg.experiment.n_iterations_global
-
-        # =====================================================================
-        # TEST AREA
-        # =====================================================================
         
-        # Original accuracy
-        original_acc = get_accuracy(model, test_loader, device)
-        print(f"\n[Итерация {i}] Accuracy оригинальной модели: {original_acc:.4f}")
+        # Finetuning top-3 models
+        finetuning_history_element = {}
 
-        # Top-5 models
+        # Original accuracy
+        finetuning_history_element['original_acc'] = float(get_accuracy(model, test_loader, device))
+        finetuning_history_element['pruned_acc'] = []
+        finetuning_history_element['fineturned_acc'] = []
+        
+        # Top-3 models
         preds_graph = np.array(preds_results['Graph'][-1])
-        K_top = 5
+        K_top = 3
         threshold_k = np.partition(preds_graph, -K_top)[-K_top]
 
         idx_greater_k = np.where(preds_graph > threshold_k)[0]
@@ -178,36 +179,35 @@ def main(cfg: Config) -> None:
         needed_k = K_top - len(idx_greater_k)
 
         # Sampling indexes if need
-        top5_indices = np.concatenate([
+        top3_indices = np.concatenate([
             idx_greater_k,
             np.random.choice(idx_equal_k, needed_k, replace=False)
         ])
 
         test_masks = surrogate_dataset_test.tensors[0]
 
-        for j, idx in enumerate(top5_indices):
+        for j, idx in enumerate(top3_indices):
             mask = test_masks[idx].to(device)
 
             # Сopy for pruning
             pruned_model = copy.deepcopy(model)
             pruned_model.edge_mask = mask
 
-            # Замер accuracy после прунинга
-            pruned_acc = get_accuracy(pruned_model, test_loader, device)
+            # Accuracy after pruning
+            finetuning_history_element['pruned_acc'].append(float(get_accuracy(pruned_model, test_loader, device)))
 
-            # 2. Дообучаем отобранную модель
+            # Turning pruned model
             optimizer_ft = torch.optim.Adam(pruned_model.parameters(), lr=cfg.model.lr_mnist)
             train(
                 pruned_model, train_loader, criterion, optimizer_ft,
                 device, cfg.model.n_epochs_mnist,
-                f'Fine-tuning pruned model {j+1}/5', is_surrogate=False
+                f'Fine-tuning pruned model {j+1}/{K_top}', is_surrogate=False
             )
 
-            # 3. Замер accuracy после дообучения
-            finetuned_acc = get_accuracy(pruned_model, test_loader, device)
+            # Accuracy after finetuning 
+            finetuning_history_element['fineturned_acc'].append(float(get_accuracy(pruned_model, test_loader, device)))
 
-            print(f"  Модель {j+1} (индекс маски {idx}): Pruned = {pruned_acc:.4f} -> Fine-tuned = {finetuned_acc:.4f}")
-        # =====================================================================
+        finetuning_history.append(finetuning_history_element)
 
     # Save results
     n_iter = cfg.experiment.n_iterations_graph
@@ -221,6 +221,7 @@ def main(cfg: Config) -> None:
         "preds_results": dict(preds_results),
         "y_true_all": y_true_all,
         "topk_results": dict(topk_results),
+        "finetuning_history": finetuning_history
     }
     filename = os.path.join(cfg.output.output_dir, f"history_{n_iter}_iterations.json")
     with open(filename, 'w') as f:
