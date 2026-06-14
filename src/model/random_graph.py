@@ -66,7 +66,7 @@ class RandomGraphModel(nn.Module):
         x: input tensor
         edge_mask: Tensor [num_edges]
         """
-        if not edge_mask:
+        if edge_mask is not None:
             edge_mask = self.edge_mask
         
         node_outputs = {}
