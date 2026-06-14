@@ -12,11 +12,12 @@ from utils import update_log
 
 
 class RandomGraphModel(nn.Module):
-    def __init__(self, modules, edges, collect_stats=True):
+    def __init__(self, modules, edges, collect_stats=True, edge_mask=None):
         super().__init__()
         self.layers = nn.ModuleList(modules)
         self.edges = edges  # list (i, j)
         self.collect_stats = collect_stats
+        self.edge_mask = edge_mask
 
         if collect_stats:
             self.register_buffer(
@@ -65,6 +66,9 @@ class RandomGraphModel(nn.Module):
         x: input tensor
         edge_mask: Tensor [num_edges]
         """
+        if self.edge_mask:
+            edge_mask = self.edge_mask
+        
         node_outputs = {}
 
         node_outputs[-1] = x

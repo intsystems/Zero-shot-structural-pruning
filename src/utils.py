@@ -90,3 +90,15 @@ def train(model, train_loader, criterion, optimizer, device, n_epochs, tqdm_desc
         pbar.set_description_str(f'{tqdm_desc}, loss={epoch_loss:.5f}')
     
     return losses_history
+
+
+def get_accuracy(eval_model: nn.Module, loader: DataLoader, device: str) -> float:
+    eval_model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            outputs = eval_model(x)
+            correct += (outputs.argmax(dim=1) == y).sum().item()
+            total += y.size(0)
+    return correct / total
