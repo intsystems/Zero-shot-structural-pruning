@@ -10,9 +10,10 @@ where $\mathbf{h}_i$ denotes the activation produced by vertex $v_i$, and $\math
 
 We consider the scenario of \textbf{edge removal}~--- deleting selected connections $e_{ij} \in E$ in order to reduce memory consumption and computational cost, possibly at the expense of predictive accuracy. Alternatively, one may prune either vertices, which correspond to layers in the source model, respectively. These pruning strategies can be reduced to one another.
 
-Let the dataset be denoted by $\mathfrak{D} = (\mathbf{X}, \mathbf{y})$, where $\mathbf{X} \in \mathbb{R}^{m \times n}$ is the matrix of input features and $\mathbf{y} \in \mathbb{R}^m$ is the vector of target variables. Let $\mathbf{w} \in \mathbb{R}^k$ be the vector of model parameters. The model is trained by minimizing the error function
+Let the dataset be denoted by $\mathfrak{D} = (\mathbf{X}, \mathbf{y})$, where $\mathbf{X} \in \mathbb{R}^{m \times n}$ is the matrix of input features and $\mathbf{y} \in \mathbb{R}^m$ is the vector of target variables. Let $\mathbf{w} \in \mathbb{R}^k$ be the vector of model parameters. Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ indicating whether an edge is pruned (see Fig.~\ref{residual_graph}). The model is trained by minimizing the error function
 \begin{equation}
-S = S(\mathbf{w} \mid \mathfrak{D}, f).
+\label{eq:loss_def}
+S = S(\mathbf{w}, \mathbf{M} \mid \mathfrak{D}, f).
 \end{equation}
 
 After pruning, we obtain a modified parameter vector $\mathbf{w}' \in \mathbb{R}^k$, in which certain groups of parameters are set to zero, corresponding to removed edges or vertices in the computation graph. The challenge of structural pruning lies in estimating the importance of parameter groups in terms of their contribution to the network information flow and the final predictive performance.
@@ -24,9 +25,9 @@ The following baselines can be found in the literature:
     \label{eq:loss_pruning}
     \min_{\mathbf{w}' \in \mathbb{R}^k}
     \left|
-    S(\mathbf{w}' \mid \mathfrak{D}, f)
+    S(\mathbf{w}', \mathbf{M} \mid \mathfrak{D}, f)
     -
-    S(\mathbf{w} \mid \mathfrak{D}, f)
+    S(\mathbf{w}, \mathbf{M} \mid \mathfrak{D}, f)
     \right|.
     \end{equation}
     This objective leads to a combinatorial optimization problem and is therefore computationally intractable in practice \cite{Molchanov2019}.

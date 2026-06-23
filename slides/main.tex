@@ -48,7 +48,7 @@
     Специализация: Интеллектуальный анализ данных\\
     Направление: 01.03.02 Прикладная математика и информатика
 }
-\date{13 июня 2026}
+\date{24 июня 2026}
 
 \begin{document}
 
@@ -58,8 +58,9 @@
 \end{frame}
 
 \begin{frame}{Структурное прореживание моделей глубокого обучения}
+    
     \begin{block}{Цель} 
-      Предложить метод структурного прореживания нейросетей.
+      Предложить эффективный метод структурного прореживания нейросетей.
     \end{block}
     
     ~\\
@@ -75,9 +76,11 @@
 \begin{frame}{Схема предлагаемого решения}
     \begin{columns}
         \begin{column}{0.4\textwidth}
-            Упрощённая схема\\residual connection и соответствующей суррогатной графовой модели. 
-            Каждому ребру сопоставляется $\gamma$, 
-            по множеству которых граф оптимизируется.
+            На основе вычислительного графа нейросети строится суррогатная графовая модель, оптимизируемая таким образом, чтобы аппроксимировать функцию ошибки.
+            
+            \vspace{5pt}
+            
+            Суррогатная модель является критерием при процессе прореживания.
         \end{column}
         \begin{column}{0.6\textwidth}
             \includegraphics[width=\linewidth]{figs/information_graph.eps}
@@ -85,109 +88,109 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}{Постановка задачи}
-    \begin{itemize}
-        \item Архитектура модели представляет собой ориентированный ациклический граф $G = (V, E)$. Каждая вершина $v_i \in V$ соответствует слою нейронной сети, и каждое ребро $e_{ij} \in E$ представляет поток данных из выхода слоя $v_i$ до входа $v_j$. 
-        
-        \item В данной формулировке удаление вершины означает удаление соответствующего слоя из сети, тогда как удаление ребра к устранению зависимости передачи данных между слоями (например, в случае residual connection).
-        
-        \item Задана выборка $\mathfrak{D} = \mathfrak{D}_\text{train} \cup \mathfrak{D}_\text{val}$. Задана функция потерь $\mathcal{L}$. Пусть $\boldsymbol w$ -- параметры модели до прунинга, а $\boldsymbol w'$ -- параметры модели после. Задача оптимизации
-        $$\min_{\boldsymbol w' \in \mathbb{R}^k} \; \left| \mathcal{L}(\mathfrak{D} \mid \boldsymbol w') - \mathcal{L}(\mathfrak{D} \mid \boldsymbol w) \right|.$$
+\begin{frame}{Задача структурного прореживания}
+    Архитектура модели $f$ представляет собой ориентированный ациклический граф $G = (V, E)$. Каждая вершина $v_i \in V$ соответствует слою нейронной сети, и каждое ребро $e_{ij} \in E$ представляет поток данных из выхода слоя $v_i$ до входа $v_j$. 
+
+    \vspace{10pt}
     
-    \end{itemize}
+    В данной формулировке удаление вершины означает удаление соответствующего слоя из сети, тогда как удаление ребра~--- к устранению зависимости передачи данных между слоями (например, в случае residual connection).
+
+    \vspace{10pt}
+    
+    Пусть задана выборка $\mathfrak{D} = \mathfrak{D}_\text{train} \cup \mathfrak{D}_\text{val}$. Задана функция ошибки $S$. Пусть $\mathbf{w}$~--- параметры модели до прореживания, а $\mathbf{w}'$~--- параметры модели после. Кроме того, определим маску рёбер $\mathbf{M} \in \mathbb{Z}_2^{|E|}$, показывающую, является ли ребро удалённым. Тогда задача оптимизации структурного прореживания:
+        $$\min_{\mathbf{w}' \in \mathbb{R}^k}
+    \left|
+    S(\mathbf{w}', \mathbf{M} \mid \mathfrak{D}, f)
+    -
+    S(\mathbf{w}, \mathbf{M} \mid \mathfrak{D}, f)
+    \right|.$$
+    
 \end{frame}
 
-\begin{frame}{Предлагаемый метод}
-    \begin{itemize}
-        \item Пусть задано $\boldsymbol{\gamma}_{ij} \in [0, 1]$ для каждого ребра $e_{ij} \in E$. Также для графа $G$ задана маска рёбер $\mathbf{M} \in \mathbb{Z}_2^{|E|}$:
+\begin{frame}{Суррогатная графовая модель}
+    \small
+   Пусть задано $\boldsymbol{\gamma}_{ij} \in [0, 1]$ для каждого ребра $e_{ij} \in E$. Также для графа $G$ задана маска рёбер $\mathbf{M} \in \mathbb{Z}_2^{|E|}$:
         $$ \mathbf{M}_{ij} = 0 \quad \Leftrightarrow \quad \boldsymbol{\gamma}_{ij} = 0.$$
 
-        \item Дополнительно накладываем следующее ограничение на исходящие ребра каждой вершины:
-        $$ \sum_{j:\ e_{ij} \in E} \boldsymbol{\gamma}_{ij} = 1 $$
+    \vspace{10pt}
+    
+    \begin{lemma}
+    Графовая модель $G(\boldsymbol{\gamma}, \mathbf{M})$ может быть представлена в виде
+    $$
+    G(\boldsymbol{\gamma}, \mathbf{M})[\mathbf{x}] = \mathbf{x} \cdot \sum_{p \in P} \prod_{(i,j) \in p} \left( \boldsymbol{\gamma}_{ij} \cdot \mathbf{M}_{ij} \right),
+    $$
+    где $P$~--- множество всех путей в графе.
+    \end{lemma}
 
-        \item Тогда оптимизационная задача:
-        $$
-        \begin{aligned}
-        \boldsymbol{\gamma}
-        =
-        \arg\min_{\boldsymbol{\gamma} \in [0,1]^{|E|}}
-        \quad
-        & \mathsf{E}_{\mathbf{M}}
-        \left\|
-        G(\boldsymbol{\gamma}, \mathbf{M})
-        -
-        S(\mathbf{w} \mid \mathfrak{D}, f)
-        \right\|_2^2
-        \\
-        \textrm{s.t.} \quad
-        &
-        \sum_{j:\ e_{ij} \in E} \boldsymbol{\gamma}_{ij} = 1.
-        \end{aligned}
-        $$
-    \end{itemize}
+    \vspace{10pt}
+
+    Добавляя ограничение на веса рёбер, получаем оптимизационную задачу:
+    $$
+    \begin{aligned}
+    \boldsymbol{\gamma}
+    =
+    \arg\min_{\boldsymbol{\gamma} \in [0,1]^{|E|}}
+    \quad
+    & \mathsf{E}_{\mathbf{M}}
+    \left\|
+    G(\boldsymbol{\gamma}, \mathbf{M})
+    -
+    S(\mathbf{w}, \mathbf{M} \mid \mathfrak{D}, f)
+    \right\|_2^2
+    \\
+    \textrm{s.t.} \quad
+    &
+    \sum_{j:\ e_{ij} \in E} \boldsymbol{\gamma}_{ij} = 1.
+    \end{aligned}
+    $$
 \end{frame}
 
-\begin{frame}{Предлагаемый метод}
-    \begin{theorem}{Теорема}
-    Пусть задано значение $\mathbf{M}=\mathbf{1}$, соответствующее модели со всеми рёбрами, то есть
-    \[
-    \forall (i,j)\in E:\ \mathbf{M}_{ij}=1.
-    \]
+\begin{frame}{Теорема о локальной линейной аппроксимации функции ошибки графовой суррогатной моделью}
+    \small
+    \begin{theorem}[Ivanov, 2026]
+    Пусть функция ошибки $S$ нормирована таким образом, что $S \in [0, 1]$. Для любой фиксированной вершины $i \in V$ пусть $E_i = \{(i,j) \in E\}$ обозначает множество исходящих из неё ребер, а $\mathbf{M}_i = \{\mathbf{M}_{ij} \mid (i,j) \in E_i\}$~--- соответствующее подмножество масок, при этом все остальные маски рёбер в графе зафиксированы и равны $1$.
+
+    Тогда функция ошибки $S$ может быть локально аппроксимирована графовой суррогатной моделью следующим образом:
     
-    Тогда в окрестности $\mathbf{M}=\mathbf{1}$ функция ошибки $S$ аппроксимируется формулой, соответствующей графу:
+    $$S(\mathbf{w}, \mathbf{M}_i \mid \mathfrak{D}, f) = C + \sum_{(i,j) \in E_i} \boldsymbol{\gamma}_{ij} \mathbf{M}_{ij} + o(\|\mathbf{M}_i - \mathbf{1}\|),$$
     
-    \[
-    \begin{split}
-    S(\mathbf{M}) =
-    &\sum_{(i,j) \in E}
-    \frac{\partial G}{\partial \mathbf{M}_{ij}}
-    \Bigg|_{\mathbf{M}=\mathbf{1}}
-    (\mathbf{M}_{ij} - 1)
-    \\
-    &+ \frac{1}{2}
-    \sum_{(i,j) \in E}
-    \sum_{(k,l) \in E}
-    \frac{\partial^2 G}
-    {\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-    \Bigg|_{\mathbf{M}=\mathbf{1}}
-    (\mathbf{M}_{ij} - 1)(\mathbf{M}_{kl} - 1)
-    \\
-    &+ o(\|\mathbf{M} - \mathbf{1}\|^2).
-    \end{split}
-    \]
+    где $C$~--- константа, а компоненты вектора коэффициентов определяются как:
+    
+    $$\boldsymbol{\gamma}_{ij} = \frac{\partial S}{\partial \mathbf{M}_{ij}}.$$
     \end{theorem}
 \end{frame}
 
 \begin{frame}{Вычислительный эксперимент}
     \begin{columns}
         \begin{column}{0.5\textwidth}
-            \begin{itemize}
-            \item Рассматриваются задачи классификации изображений из датасета MNIST.
+            Рассматривается задача классификации изображений из датасета MNIST.
 
             \vspace{10pt}
-            
-            \item В сравнении участвуют следующие базовые методы:
-                \begin{small}
-                \begin{itemize} 
-                \item \textbf{(Graph)}: Предложенный метод,
-                \item \textbf{(FCN)}: Простая нейросеть,
-                \item \textbf{(Linear)}: Линейная регрессия,
-                \item \textbf{(L1)}: Метод, основанный на измерении величин параметров,
-                \item \textbf{(Taylor)}: Метод, использующий приближение Тейлора до 1-го и 2-го порядков.
-                \end{itemize}
-              \end{small}
-          \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
+
             \includegraphics[width=\linewidth]{figs/graph_example_1.eps}
             
-            В эксперименте проводилась оптимизация суррогатных моделей, построенных на основе семплированных графов из нод $\textbf{ReLU}(\textbf{Linear}(\mathbf{x}))$.
+            В эксперименте проводилась оптимизация суррогатных моделей, построенных на основе семплированных графов из нод $\textbf{ReLU}(\textbf{Linear}(\mathbf{x}))$.  
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            В сравнении участвуют следующие базовые методы:\\
+                \vspace{5pt}
+                \begin{small}
+                \textbf{(Graph)}: предложенный метод,\\
+                \vspace{5pt}
+                \textbf{(FCN)}: простая нейросеть,\\
+                \vspace{5pt}
+                \textbf{(Linear)}: линейная регрессия,\\
+                \vspace{5pt}
+                \textbf{(L1)}: метод, основанный на измерении величин параметров,\\
+                \vspace{5pt}
+                \textbf{(Taylor)}: метод, использующий приближение Тейлора до 1-го и 2-го порядков.
+                \end{small}
         \end{column}
     \end{columns}
 \end{frame}
 
-\begin{frame}{Вычислительный эксперимент}
-    Приводятся процент совпадений между топ-5\% моделей, ранжированных в соответствии с истинной функцией ошибки, и моделями, ранжированными в соответствии с прогнозом суррогатной модели.
+\begin{frame}{Процент пересечения топ-5\% моделей}
+    Приводится процент пересечения топ-5\% моделей, ранжированных в соответствии с истинной функцией ошибки, и моделей, ранжированных в соответствии с прогнозом суррогатной модели.
   \begin{table}[H]
     \centering
     \begin{tabular}{|r|c|c|c|c|}
@@ -205,12 +208,14 @@
   Из таблицы видно, что предложенный метод демонстрирует высокую эффективность при решении предложенной задачи. 
 \end{frame}
 
-\begin{frame}{Вычислительный эксперимент}
+\begin{frame}{Прогноз функции ошибки против истинных значений}
     \begin{figure}
     \includegraphics[width=0.9\textwidth]{figs/graph_1_iter_2_experiment_6.eps}
     
     \centering
     \includegraphics[width=0.6\textwidth]{figs/graph_2_iter_2_experiment_6.eps}
+
+    \vspace{10pt}
     
     График истинных и прогнозируемых значений ошибок для сравнения методов. Используется модель с 10--15 рёбрами.
     \label{graph_iter_2}
@@ -218,19 +223,21 @@
 \end{frame}
 
 \begin{frame}{Выносится на защиту}
+    \small
+    \begin{block}{Достигнутые результаты}
     \begin{enumerate}
       \item Доказана теорема о локальном поведении графовой суррогатной модели.
-      \vspace{10pt}
       \item Проведены эксперименты, показавшие, что предложенный метод превосходит суррогатные модели, которые не используют информацию о вычислительном графе.
-      \vspace{10pt}
       \item Планируется расширить и обобщить этот метод для прореживания по каналам (например, по фильтрам в свёрточных нейросетях).
     \end{enumerate}
-    \rule{5cm}{0.2mm}
-    \vspace{10pt}
-    \begin{itemize}
-        \item Работа представлена на Всероссийской научной конференции МФТИ.
-        \item Статья подготовлена к публикации и планируется подача в рецензируемый журнал.
-    \end{itemize}
+    \end{block}
+    
+    \begin{block}{Доклады по теме работы}
+    \begin{enumerate}
+        \item Работа представлена на Всероссийской научной конференции МФТИ 2026.
+        \item Статья подготовлена к публикации, планируется подача в рецензируемый журнал.
+    \end{enumerate}
+    \end{block}
 \end{frame}
 
 \end{document} 
