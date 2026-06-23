@@ -1,9 +1,9 @@
 \begin{center}
-    \Large{\textbf{Abstract}}
+    \Large{\textbf{Аннотация}}
 \end{center}
 
 \begin{singlespace}
-The paper investigates the problem of structural pruning in neural networks. Structural pruning is the procedure of removing entire groups of parameters from a neural network, for example, filters in CNNs or skip connections. An appropriate pruning strategy can improve both generalization performance and inference efficiency. The main difficulty of structural pruning is that removing a layer requires removing or consistently modifying all dependent layers.
+В данной работе исследуется проблема структурного прореживания нейронных сетей. Структурное прореживание представляет собой процесс удаления групп параметров из нейронной сети, например, фильтров в свёрточных нейронных сетях. Оптимальная стратегия прореживания позволяет повысить как обобщающую способность модели, так и эффективность выполнения инференса. Основная сложность структурного прореживания заключается в том, что удаление одного слоя требует исключения или согласованного изменения всех зависимых слоев.
 
-The proposed method is based on the analysis of the deep learning computation graph and the estimation of the information flow propagated through it. The method enables the estimation of the importance of operations in the computation graph in a few-shot setting, i.e., using several forward passes of a data subset through the analyzed model. To demonstrate the effectiveness of the proposed method, we conduct multiple experiments on the MNIST dataset.
+Предложенный метод основан на анализе вычислительного графа нейронной сети и оценке распространения информации по графу. Данный подход позволяет оценивать значимость операций в вычислительном графе в условиях few-shot обучения, то есть с использованием нескольких прямых проходов модели на подмножестве данных. Для демонстрации эффективности предложенного метода проведен ряд экспериментов на датасете MNIST.
 \end{singlespace}

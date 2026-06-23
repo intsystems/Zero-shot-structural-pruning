@@ -7,10 +7,8 @@ Let the dataset be denoted by
 
 We employ the loss-based pruning method defined by the optimization problem~(\ref{eq:loss_pruning}).
 
-
-
 The proposed pruning algorithm constructs a \textbf{surrogate graph model} $G(\boldsymbol{\gamma}, \mathbf{M})$ that replicates the structure of the original neural network. The graph is derived from the computation graph of the model. For each edge $e_{ij} \in E$, introduce a continuous importance coefficient $\boldsymbol{\gamma}_{ij} \in [0,1]$. 
-Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ indicating whether an edge is pruned (see Fig.~\ref{residual_graph}). Formally,
+Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ similarly~(\ref{eq:loss_def}). Formally,
 \begin{equation}
 \mathbf{M}_{ij} =0 
 \quad \Leftrightarrow \quad 
@@ -22,6 +20,8 @@ Additionally, define a binary edge mask $\mathbf{M} \in \mathbb{Z}_2^{|E|}$ indi
 \caption{Simplified schematic of a residual connection. A coefficient $\boldsymbol{\gamma}_{ij}$ is assigned to each edge; smaller values of $\boldsymbol{\gamma}_{ij}$ indicate lower edge importance.}
 \label{residual_graph}
 \end{figure}
+
+We introduce and prove a lemma for representing the graph model as a finite formula.
 
 \begin{lemma}
 \label{lem:graph_model}
@@ -44,114 +44,39 @@ Summing these contributions over all paths yields the desired expression.
 We prove the following theorem describing the local behavior of the model.
 
 \begin{theorem}
-Let $\mathbf{M}=\mathbf{1}$ denote the full mask, i.e.,
+Let the loss function $S$ be normalized such that $S \in [0, 1]$. For any fixed vertex $i \in V$ let $E_i = \{(i,j) \in E\}$ denote the set of outgoing edges from vertex $i$, and let $\mathbf{M}_i = \{\mathbf{M}_{ij} \mid (i,j) \in E_i\}$ be the corresponding subset of mask variables, with all other masks in the graph fixed to $1$. Then, the error function $S$ can be locally approximated by the graph surrogate model:
 \begin{equation}
-\forall (i,j)\in E:\ \mathbf{M}_{ij}=1.
+S(\mathbf{w}, \mathbf{M}_i \mid \mathfrak{D}, f) = C + \sum_{(i,j) \in E_i} \boldsymbol{\gamma}_{ij} \mathbf{M}_{ij} + o(\|\mathbf{M}_i - \mathbf{1}\|),
 \end{equation}
-
-Then, in a neighborhood of the point $\mathbf{M}=\mathbf{1}$, the error function $S$ can be approximated by the Taylor expansion associated with the graph structure:
-
+where $C$ is a constant, and
 \begin{equation}
-\begin{split}
-S(\mathbf{M}) =
-&\sum_{(i,j) \in E}
-\frac{\partial G}{\partial \mathbf{M}_{ij}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-(\mathbf{M}_{ij} - 1)
-\\
-&+ \frac{1}{2}
-\sum_{(i,j) \in E}
-\sum_{(k,l) \in E}
-\frac{\partial^2 G}
-{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-(\mathbf{M}_{ij} - 1)(\mathbf{M}_{kl} - 1)
-\\
-&+ o(\|\mathbf{M} - \mathbf{1}\|^2).
-\end{split}
+\boldsymbol{\gamma}_{ij} = \frac{\partial S}{\partial \mathbf{M}_{ij}}.
 \end{equation}
 \end{theorem}
 
 \begin{proof}
-For simplicity, consider the scalar-output case.
-
-As discussed above, consider the model represented as a directed acyclic graph. Let $\mathbf{w}_p(\mathbf{x})$ represent the input-dependent contribution of the path $p$ to the network's behavior. Then the model output can be written as
-
+According to Lemma~\ref{lem:graph_model}, the graph model $G(\boldsymbol{\gamma}, \mathbf{M})$ is structured as a sum over paths. Since the network is a directed acyclic graph, any path $p \in P$ can contain at most one outgoing edge from the vertex $i$. Consequently, when all masks outside of $E_i$ are fixed to $1$, the product over each path contains at most one variable from $\mathbf{M}_i$, meaning the graph model locally reduces to a linear form:
 \begin{equation}
-f(\mathbf{x},\mathbf{M})
-=
-\sum_{p \in P}
-\mathbf{w}_p(\mathbf{x})
-\prod_{(i,j)\in p} \mathbf{M}_{ij}.
+G(\boldsymbol{\gamma}, \mathbf{M}_i) = C' + \sum_{(i,j) \in E_i} \boldsymbol{\gamma}_{ij} \mathbf{M}_{ij},
+\end{equation}
+where $C'$ is a constant.
+
+Applying a first-order Taylor expansion to the error function $S$ around the point $\mathbf{M}_i = \mathbf{1}$ yields:
+\begin{equation}
+S(\mathbf{w}, \mathbf{M}_i \mid \mathfrak{D}, f) = S(\mathbf{w}, \mathbf{1} \mid \mathfrak{D}, f) + \sum_{(i,j) \in E_i} \frac{\partial S}{\partial \mathbf{M}_{ij}} (\mathbf{M}_{ij} - 1) + o(\|\mathbf{M}_i - \mathbf{1}\|).
 \end{equation}
 
-Differentiating with respect to the mask variables in a neighborhood of the point $\mathbf{M}=\mathbf{1}$, we obtain
+By expanding the terms and grouping the components independent of $\mathbf{M}_i$ into a constant $C$, we can match the linear expansion with the graph surrogate model parameters:
 \begin{equation}
-\frac{\partial f}{\partial \mathbf{M}_{ij}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-=
-\sum_{p \in P,\ (i,j)\in p}
-\mathbf{w}_p(\mathbf{x}),
+\begin{split}
+S(\mathbf{w}, \mathbf{M}_i \mid \mathfrak{D}, f) =
+&\left( S(\mathbf{w}, \mathbf{1} \mid \mathfrak{D}, f) - \sum_{(i,j) \in E_i} \frac{\partial S}{\partial \mathbf{M}_{ij}} \right)
+\\
+&+ \sum_{(i,j) \in E_i} \frac{\partial S}{\partial \mathbf{M}_{ij}} \mathbf{M}_{ij} + o(\|\mathbf{M}_i - \mathbf{1}\|).
+\end{split}
 \end{equation}
 
-\begin{equation}
-\label{eq:second_derivative_model}
-\frac{\partial^2 f}
-{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-=
-\sum_{p \in P,\ \{(i,j),(k,l)\}\subset p}
-\mathbf{w}_p(\mathbf{x}).
-\end{equation}
-
-Using Lemma~\ref{lem:graph_model}, the corresponding derivatives of the graph model are
-\begin{equation}
-\frac{\partial G}{\partial \mathbf{M}_{ij}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-=
-\mathbf{x}
-\sum_{p \in P,\ (i,j)\in p}
-\prod_{(i',j')\in p}
-\boldsymbol{\gamma}_{i'j'},
-\end{equation}
-
-\begin{equation}
-\label{eq:second_derivative_error}
-\frac{\partial^2 G}
-{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-=
-\mathbf{x}
-\sum_{p \in P,\ \{(i,j),(k,l)\}\subset p}
-\prod_{(i',j')\in p}
-\boldsymbol{\gamma}_{i'j'}.
-\end{equation}
-
-Differentiating the error function $S$ twice with respect to the mask variables in a neighborhood of the point $\mathbf{M}=\mathbf{1}$ yields
-\begin{equation}
-\frac{\partial^2 S}
-{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-\Bigg|_{\mathbf{M}=\mathbf{1}}
-=
-\frac{\partial \mathcal{L}}{\partial f}
-\cdot
-\frac{\partial^2 f}
-{\partial \mathbf{M}_{ij}\,\partial \mathbf{M}_{kl}}
-+
-\frac{\partial^2 \mathcal{L}}{\partial f^2}
-\cdot
-\frac{\partial f}{\partial \mathbf{M}_{ij}}
-\cdot
-\frac{\partial f}{\partial \mathbf{M}_{kl}},
-\end{equation}
-where $\mathcal{L}$ is a twice differentiable loss function.
-
-Observe that the second derivatives in~(\ref{eq:second_derivative_model}) and~(\ref{eq:second_derivative_error}) share the same path-inclusion condition,
-\begin{equation}
-\{(i,j),(k,l)\}\subset p.
-\end{equation}
-
-These derivatives are nonzero if and only if there exists at least one path $p \in P$ containing both edges $(i,j)$ and $(k,l)$. Therefore, the local dependency structure between mask variables is determined solely by the graph topology. Consequently, the error function preserves the local dependency structure induced by the computational graph.
+In conclusion, define $C = S(\mathbf{w}, \mathbf{1} \mid \mathfrak{D}, f) - \sum_{(i,j) \in E_i} \frac{\partial S}{\partial \mathbf{M}_{ij}}$ and set $\boldsymbol{\gamma}_{ij} = \frac{\partial S}{\partial \mathbf{M}_{ij}}$.
 \end{proof}
 
 \begin{proposition}
@@ -172,7 +97,7 @@ The method is based on optimizing this surrogate graph model. The final optimiza
 \left\|
 G(\boldsymbol{\gamma}, \mathbf{M})
 -
-S(\mathbf{w} \mid \mathfrak{D}, f)
+S(\mathbf{w}, \mathbf{M} \mid \mathfrak{D}, f)
 \right\|_2^2
 \\
 \textrm{s.t.} \quad
