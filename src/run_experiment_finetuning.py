@@ -168,6 +168,7 @@ def main(cfg: Config) -> None:
         finetuning_history_element['original_acc'] = float(get_accuracy(model, test_loader, device))
         finetuning_history_element['pruned_acc'] = []
         finetuning_history_element['fineturned_acc'] = []
+        finetuning_history_element['pruned_edges_percent'] = []
         
         # Top-3 models
         preds_graph = np.array(preds_results['Graph'][-1])
@@ -188,6 +189,9 @@ def main(cfg: Config) -> None:
 
         for j, idx in enumerate(top3_indices):
             mask = test_masks[idx].to(device)
+            
+            pruned_percent = float((1.0 - mask.float().mean()).item() * 100)
+            finetuning_history_element['pruned_edges_percent'].append(pruned_percent)
 
             # Сopy for pruning
             pruned_model = copy.deepcopy(model)
