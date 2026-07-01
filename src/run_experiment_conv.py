@@ -64,7 +64,6 @@ def main(cfg: Config) -> None:
 
         # Sampling and creating graph model
         modules, edges = generate_conv_graph(
-            cfg.model.input_dim,
             cfg.experiment.n_iterations_graph,
         )
         model = RandomGraphModel(modules, edges)
