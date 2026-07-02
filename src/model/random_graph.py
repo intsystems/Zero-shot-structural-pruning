@@ -165,7 +165,7 @@ def generate_graph(input_dim, n_iterations):
 
 def generate_conv_graph(n_iterations):
 
-    modules = [IdBlock(1), ConvBlock(1, 32)]
+    modules = [IdBlock(1, flatten=False), ConvBlock(1, 32)]
 
     edges = [(-1, 0), (0, 1)]
 

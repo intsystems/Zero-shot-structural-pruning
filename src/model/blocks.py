@@ -55,11 +55,13 @@ class IdBlock(nn.Module):
     Node for identical function. Used for input.
     """
 
-    def __init__(self, input_dim, is_end=False):
+    def __init__(self, input_dim, is_end=False, flatten=True):
         super().__init__()
         self.is_end = is_end
         self.out_features = input_dim
+        self.flatten = flatten
 
     def forward(self, x):
-        # return x
-        return torch.flatten(x, 1)
+        if self.flatten:
+            return torch.flatten(x, 1)
+        return x
