@@ -26,19 +26,22 @@ class SimpleAttention(nn.Module):
         super().__init__()
         assert dim % num_heads == 0
         self.num_heads = num_heads
-        self.head_dim = dim // num_heads
-        self.scale = self.head_dim ** -0.5
         self.qkv = nn.Linear(dim, 3 * dim)
         self.proj = nn.Linear(dim, dim)
 
     def forward(self, x):
-        B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim)
-        qkv = qkv.permute(2, 0, 3, 1, 4)          # (3, B, H, N, D)
+        B, N, _ = x.shape
+        qkv_out = self.qkv(x)
+        # After structural pruning (prune_head_dims=True) qkv.out_features
+        # shrinks by a per-head amount, so head_dim must be derived from the
+        # actual tensor shape rather than stored at init.
+        head_dim = qkv_out.shape[-1] // (3 * self.num_heads)
+        qkv = qkv_out.reshape(B, N, 3, self.num_heads, head_dim)
+        qkv = qkv.permute(2, 0, 3, 1, 4)           # (3, B, H, N, D)
         q, k, v = qkv.unbind(0)
-        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = (q @ k.transpose(-2, -1)) * (head_dim ** -0.5)
         attn = attn.softmax(dim=-1)
-        out = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        out = (attn @ v).transpose(1, 2).reshape(B, N, self.num_heads * head_dim)
         return self.proj(out)
 
 
