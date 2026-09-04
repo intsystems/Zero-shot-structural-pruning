@@ -13,7 +13,7 @@ Used as a baseline to compare against the surrogate-based results.
 from __future__ import annotations
 
 import torch.nn as nn
-from torchvision.models.mobilenet_v2 import MobileNetV2
+import torchvision.models.mobilenet_v2 as MobileNetV2
 
 from _common import make_common_parser, run_pipeline
 
