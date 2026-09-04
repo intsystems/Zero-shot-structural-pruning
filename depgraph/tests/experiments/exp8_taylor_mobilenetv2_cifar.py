@@ -13,7 +13,7 @@ Used as a baseline to compare against the surrogate-based results.
 from __future__ import annotations
 
 import torch.nn as nn
-import torchvision.models.mobilenet_v2 as MobileNetV2
+import torchvision.models as models
 
 from _common import make_common_parser, run_pipeline
 
@@ -21,7 +21,7 @@ import torch_pruning as tp
 
 
 def make_cifar_mobilenetv2(num_classes: int = 10) -> nn.Module:
-    model = MobileNetV2(num_classes=num_classes)
+    model = models.mobilenet_v2(num_classes=num_classes)
     # CIFAR adaptation: 3x3 stride-1 stem instead of the 7x7 stride-2 one.
     # MobileNetV2 has no max-pool — downsampling is done by stride-2 blocks,
     # which are kept as is (32x32 -> 2x2 before the classifier).
