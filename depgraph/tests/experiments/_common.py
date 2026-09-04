@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import random
 import sys
 import time
 import typing
@@ -32,6 +33,33 @@ import torch_pruning as tp  # noqa: E402
 
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2470, 0.2435, 0.2616)
+
+# Per-family training defaults. "conv" covers plain/residual CNNs (VGG,
+# ResNet, MobileNetV2, ConvMixer); "vit" covers transformer blocks, which
+# need an adaptive optimizer, higher weight decay, and more epochs to be
+# comparable to CNNs trained with plain SGD.
+MODEL_HPARAMS: typing.Dict[str, dict] = {
+    "conv": dict(optimizer="sgd", lr=1e-2, weight_decay=5e-4,
+                 epochs=5, finetune_lr=1e-3),
+    "vit": dict(optimizer="adamw", lr=1e-3, weight_decay=0.05,
+                epochs=10, finetune_lr=1e-4),
+}
+
+
+def set_seed(seed: int, deterministic: bool = False) -> None:
+    """Seed python, torch (and numpy if present) RNGs."""
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    try:
+        import numpy as np
+        np.random.seed(seed)
+    except ImportError:
+        pass
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 def get_cifar10_loaders(data_dir: str, batch_size: int, num_workers: int):
@@ -56,8 +84,24 @@ def get_cifar10_loaders(data_dir: str, batch_size: int, num_workers: int):
     return train_loader, test_loader, calib_ds
 
 
-def calibration_loader(calib_ds, n_samples: int, batch_size: int) -> DataLoader:
-    idx = list(range(min(n_samples, len(calib_ds))))
+def calibration_loader(calib_ds, n_samples: int, batch_size: int,
+                       num_classes: int = 10) -> DataLoader:
+    """Stratified, shuffled calibration subset.
+
+    CIFAR-10 train data is ordered by class, so taking the first N samples
+    yields a single-class subset (all "airplane" for N <= 5000). Instead,
+    take `n_samples // num_classes` images per class and shuffle them.
+    """
+    targets = calib_ds.targets
+    per_class = max(1, n_samples // num_classes)
+    idx_by_class: typing.Dict[int, typing.List[int]] = {}
+    for i, y in enumerate(targets):
+        idx_by_class.setdefault(y, []).append(i)
+    idx: typing.List[int] = []
+    for y in sorted(idx_by_class):
+        idx.extend(idx_by_class[y][:per_class])
+    rng = random.Random(0)  # fixed seed -> the subset itself is reproducible
+    rng.shuffle(idx)
     return DataLoader(Subset(calib_ds, idx), batch_size=batch_size, shuffle=False)
 
 
@@ -96,30 +140,68 @@ def count_stats(model, example_inputs):
     return macs, nparams
 
 
-def make_common_parser(description: str) -> argparse.ArgumentParser:
+def make_common_parser(description: str,
+                        family: str = "conv") -> argparse.ArgumentParser:
+    """Common CLI with per-family defaults (see MODEL_HPARAMS)."""
+    hp = MODEL_HPARAMS[family]
     p = argparse.ArgumentParser(description=description)
     p.add_argument("--data-dir", default="./data")
     p.add_argument("--batch-size", type=int, default=128)
-    p.add_argument("--epochs", type=int, default=3, help="pre-pruning training epochs")
-    p.add_argument("--finetune-epochs", type=int, default=2, help="post-pruning fine-tune epochs")
-    p.add_argument("--lr", type=float, default=1e-2)
-    p.add_argument("--finetune-lr", type=float, default=1e-3)
+    p.add_argument("--epochs", type=int, default=hp["epochs"],
+                   help="pre-pruning training epochs")
+    p.add_argument("--finetune-epochs", type=int, default=2,
+                   help="post-pruning fine-tune epochs")
+    p.add_argument("--lr", type=float, default=hp["lr"])
+    p.add_argument("--finetune-lr", type=float, default=hp["finetune_lr"])
     p.add_argument("--pruning-ratio", type=float, default=0.3)
     p.add_argument("--surrogate-epochs", type=int, default=1000)
     p.add_argument("--surrogate-lr", type=float, default=5e-3)
+    p.add_argument("--surrogate-batch-size", type=int, default=32)
     p.add_argument("--calibration-samples", type=int, default=512)
     p.add_argument("--num-workers", type=int, default=2)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--optimizer", choices=["sgd", "adamw"], default="sgd")
-    p.add_argument("--weight-decay", type=float, default=5e-4)
+    p.add_argument("--deterministic", action="store_true",
+                   help="torch.cudnn.deterministic (slower, reproducible)")
+    p.add_argument("--optimizer", choices=["sgd", "adamw"], default=hp["optimizer"])
+    p.add_argument("--weight-decay", type=float, default=hp["weight_decay"])
     return p
 
 
-def make_optimizer(name: str, params, lr: float, weight_decay: float):
+def make_optimizer(name: str, model: nn.Module, lr: float, weight_decay: float):
+    """Optimizer with weight decay excluded for 1-D params (norms, biases).
+
+    Note: takes the *model*, not a params iterable, so parameters can be
+    split into decay / no-decay groups.
+    """
+    decay, no_decay = [], []
+    for m_name, prm in model.named_parameters():
+        if not prm.requires_grad:
+            continue
+        if prm.ndim <= 1:  # BN/ biases / LayerNorm weights
+            no_decay.append(prm)
+        else:
+            decay.append(prm)
+    groups = [
+        dict(params=decay, weight_decay=weight_decay),
+        dict(params=no_decay, weight_decay=0.0),
+    ]
     if name == "adamw":
-        return torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
-    return torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=weight_decay)
+        return torch.optim.AdamW(groups, lr=lr)
+    return torch.optim.SGD(groups, lr=lr, momentum=0.9)
+
+
+def accumulate_taylor_gradients(model, calib_loader, criterion, device) -> None:
+    """Average Taylor gradients over the calibration subset.
+
+    Each batch loss is scaled by 1/n_batches so the accumulated gradient
+    is on the same scale regardless of `--calibration-samples`.
+    """
+    model.zero_grad()
+    n_batches = max(len(calib_loader), 1)
+    for x, y in calib_loader:
+        x, y = x.to(device), y.to(device)
+        (criterion(model(x), y) / n_batches).backward()
 
 
 def run_pipeline(
@@ -138,10 +220,10 @@ def run_pipeline(
     `calibration_needed=True` triggers `imp.fit(...)`. Passing an existing
     Importance skips those steps — useful for method-comparison sweeps.
     """
-    torch.manual_seed(args.seed)
+    set_seed(args.seed, deterministic=getattr(args, "deterministic", False))
     device = torch.device(args.device)
     print(f"\n########## {experiment_name} ##########")
-    print(f"Device: {device}")
+    print(f"Device: {device}  seed={args.seed}")
 
     train_loader, test_loader, calib_ds = get_cifar10_loaders(
         args.data_dir, args.batch_size, args.num_workers)
@@ -152,9 +234,10 @@ def run_pipeline(
     criterion = nn.CrossEntropyLoss()
 
     # ---- baseline train ----
-    opt = make_optimizer(args.optimizer, model.parameters(), args.lr, args.weight_decay)
+    opt = make_optimizer(args.optimizer, model, args.lr, args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(args.epochs, 1))
-    print(f"[baseline train] {args.epochs} epochs, {args.optimizer} lr={args.lr}")
+    print(f"[baseline train] {args.epochs} epochs, {args.optimizer} "
+          f"lr={args.lr} wd={args.weight_decay}")
     for epoch in range(args.epochs):
         t0 = time.time()
         loss, tr_acc = train_one_epoch(model, train_loader, opt, criterion, device)
@@ -173,7 +256,7 @@ def run_pipeline(
         importance = tp.importance.SurrogateImportance(
             surrogate_epochs=args.surrogate_epochs,
             surrogate_lr=args.surrogate_lr,
-            surrogate_batch_size=32,
+            surrogate_batch_size=args.surrogate_batch_size,
             normalizer="mean",
         )
 
@@ -197,11 +280,9 @@ def run_pipeline(
               f"scored in {time.time()-t0:.1f}s")
     elif isinstance(importance, tp.importance.TaylorImportance):
         # TaylorImportance needs a fresh backward pass to populate gradients.
-        model.zero_grad()
-        for x, y in calib_loader:
-            x, y = x.to(device), y.to(device)
-            criterion(model(x), y).backward()
-        print(f"[taylor] gradients accumulated over {args.calibration_samples} samples")
+        accumulate_taylor_gradients(model, calib_loader, criterion, device)
+        print(f"[taylor] gradients averaged over {args.calibration_samples} "
+              f"stratified samples")
 
     pruner.step()
     pruned_macs, pruned_nparams = count_stats(model, example_inputs)
@@ -214,8 +295,9 @@ def run_pipeline(
 
     # ---- fine-tune ----
     if args.finetune_epochs > 0:
-        opt = make_optimizer(args.optimizer, model.parameters(), args.finetune_lr, args.weight_decay)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(args.finetune_epochs, 1))
+        opt = make_optimizer(args.optimizer, model, args.finetune_lr, args.weight_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=max(args.finetune_epochs, 1))
         print(f"[finetune] {args.finetune_epochs} epochs lr={args.finetune_lr}")
         for epoch in range(args.finetune_epochs):
             t0 = time.time()
