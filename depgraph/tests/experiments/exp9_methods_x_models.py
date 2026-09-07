@@ -86,15 +86,18 @@ MODEL_SPECS = {
 # importance registry
 # ---------------------------------------------------------------------------
 def build_importance(name: str, args, target_types):
+    target_types_kwargs = (
+        {"target_types": list(target_types)} if target_types else {}
+    )
     if name == "magnitude":
         return tp.importance.MagnitudeImportance(
             p=2, normalizer="mean",
-            target_types=list(target_types) if target_types else None,
+            **target_types_kwargs,
         )
     if name == "taylor":
         return tp.importance.TaylorImportance(
             normalizer="mean",
-            target_types=list(target_types) if target_types else None,
+            **target_types_kwargs,
         )
     if name == "surrogate":
         return tp.importance.SurrogateImportance(
