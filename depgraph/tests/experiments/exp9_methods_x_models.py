@@ -11,16 +11,14 @@ Pipeline (per model):
 
 A per-model summary table is printed at the end of the run.
 
-Fixed parameter budget
-----------------------
-`global_pruning=False` (local, per-layer pruning) with the same
-`--pruning-ratio` is used for every method. With local pruning the number
-of channels removed from each dependency group is a function of the
-group's root-layer size and the ratio only — it does NOT depend on the
-importance scores. Therefore every method prunes exactly the same number
-of parameters for a given model, and methods are compared fairly. The
-pruned parameter count of the first method is remembered and verified
-against the other methods.
+Global pruning
+--------------
+`global_pruning=True` ranks structural dimensions from all dependency groups
+together and removes the globally least-important ones. This is required by
+`SurrogateImportance`, whose graph model produces scores for comparing groups.
+The same `--pruning-ratio` is used for every method. Since methods can allocate
+the pruned dimensions to different layers, their resulting parameter and MAC
+counts may differ and are reported separately.
 """
 from __future__ import annotations
 
@@ -135,8 +133,7 @@ def score_model(importance, model, pruner, calib_loader, criterion, device,
 # ---------------------------------------------------------------------------
 def prune_and_finetune(method_name, base_state, spec, args,
                        train_loader, test_loader, calib_loader,
-                       device, example_inputs, criterion,
-                       expected_pruned_params) -> dict:
+                       device, example_inputs, criterion) -> dict:
     model = spec["model_fn"]().to(device)
     model.load_state_dict(base_state)
 
@@ -148,8 +145,7 @@ def prune_and_finetune(method_name, base_state, spec, args,
         model=model,
         example_inputs=example_inputs,
         importance=importance,
-        # LOCAL pruning: identical channel counts per group across methods.
-        global_pruning=False,
+        global_pruning=True,
         pruning_ratio=args.pruning_ratio,
         ignored_layers=ignored,
         round_to=args.round_to,
@@ -164,13 +160,6 @@ def prune_and_finetune(method_name, base_state, spec, args,
     pruner.step()
 
     pr_macs, pr_nparams = count_stats(model, example_inputs)
-    # ---- fixed-budget check -------------------------------------------
-    if expected_pruned_params is None:
-        expected_pruned_params = pr_nparams
-    elif pr_nparams != expected_pruned_params:
-        print(f"    WARNING: pruned params {pr_nparams} != expected "
-              f"{expected_pruned_params} — budget not fixed!")
-
     # 3. accuracy right after pruning
     pr_acc = evaluate(model, test_loader, device)
     print(f"    [{method_name}] pruned: params={pr_nparams/1e6:.2f}M "
@@ -245,19 +234,15 @@ def run_model(model_name, spec, args, train_loader, test_loader, calib_ds,
     del model
 
     # ---- 2-5. every method against the same snapshot ----
-    expected_pruned_params = None
     results = []
     for method in args.methods:
         print(f"  ---- method: {method} ----")
         r = prune_and_finetune(
             method, base_state, spec, args, train_loader, test_loader,
             calib_loader, device, example_inputs, criterion,
-            expected_pruned_params,
         )
         r["base_acc"] = base_acc
         results.append(r)
-        if expected_pruned_params is None:
-            expected_pruned_params = r["pruned_params"]
 
     return dict(model=model_name, base_acc=base_acc,
                 base_params=base_nparams, base_macs=base_macs,
