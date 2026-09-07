@@ -175,7 +175,7 @@ def prune_and_finetune(method_name, base_state, spec, args,
 
     # 4. fine-tune
     if args.finetune_epochs > 0:
-        opt = make_optimizer(args.optimizer, model.parameters(),
+        opt = make_optimizer(args.optimizer, model,
                              args.finetune_lr, args.weight_decay)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(
             opt, T_max=max(args.finetune_epochs, 1))
@@ -216,7 +216,7 @@ def run_model(model_name, spec, args, train_loader, test_loader, calib_ds,
 
     # ---- 1. baseline training (once per model) ----
     model = spec["model_fn"]().to(device)
-    opt = make_optimizer(args.optimizer, model.parameters(),
+    opt = make_optimizer(args.optimizer, model,
                          args.lr, args.weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(
         opt, T_max=max(args.epochs, 1))
