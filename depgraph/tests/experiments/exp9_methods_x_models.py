@@ -31,8 +31,9 @@ import torch
 import torch.nn as nn
 
 from _common import (
-    calibration_loader, count_stats, evaluate, get_cifar10_loaders,
-    make_common_parser, make_optimizer, train_one_epoch,
+    accumulate_taylor_gradients, calibration_loader, count_stats, evaluate,
+    get_cifar10_loaders, make_common_parser, make_optimizer, set_seed,
+    train_one_epoch,
 )
 from exp2_resnet18_cifar import make_cifar_resnet18, ignored_layers as resnet_ignored
 from exp3_vit_cifar import make_vit, vit_pruner_kwargs
@@ -103,9 +104,9 @@ def build_importance(name: str, args, target_types):
         return tp.importance.SurrogateImportance(
             surrogate_epochs=args.surrogate_epochs,
             surrogate_lr=args.surrogate_lr,
-            surrogate_batch_size=32,
+            surrogate_batch_size=args.surrogate_batch_size,
             normalizer="mean",
-            target_types=target_types,
+            **target_types_kwargs,
         )
     raise ValueError(f"Unknown method: {name!r}")
 
@@ -120,11 +121,11 @@ def score_model(importance, model, pruner, calib_loader, criterion, device,
               f"{len(importance._imp)} groups scored")
     elif isinstance(importance, tp.importance.TaylorImportance):
         # TaylorImportance reads |grad * weight|, so accumulate gradients
-        # over the calibration batch first.
-        model.zero_grad()
-        for x, y in calib_loader:
-            x, y = x.to(device), y.to(device)
-            criterion(model(x), y).backward()
+        # without updating BatchNorm statistics on the calibration subset.
+        model.eval()
+        accumulate_taylor_gradients(
+            model, calib_loader, criterion, device,
+        )
         print(f"    [{method_name}] taylor grads: {time.time()-t0:.1f}s")
     # MagnitudeImportance is weight-only, nothing to prepare.
 
@@ -178,6 +179,9 @@ def prune_and_finetune(method_name, base_state, spec, args,
 
     # 4. fine-tune
     if args.finetune_epochs > 0:
+        # Surrogate fitting consumes random numbers; reset the RNG so every
+        # method sees the same shuffled training batches during fine-tuning.
+        set_seed(args.seed, deterministic=args.deterministic)
         opt = make_optimizer(args.optimizer, model,
                              args.finetune_lr, args.weight_decay)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -301,7 +305,7 @@ def main():
                         help="round pruned channel counts to a multiple of this")
     args = parser.parse_args()
 
-    torch.manual_seed(args.seed)
+    set_seed(args.seed, deterministic=args.deterministic)
     device = torch.device(args.device)
     print(f"Device: {device}")
 
