@@ -147,6 +147,7 @@ def prune_and_finetune(method_name, base_state, spec, args,
         importance=importance,
         global_pruning=True,
         pruning_ratio=args.pruning_ratio,
+        max_pruning_ratio=args.max_pruning_ratio,
         ignored_layers=ignored,
         round_to=args.round_to,
     )
@@ -288,6 +289,8 @@ def main():
                         choices=["taylor", "magnitude", "surrogate"])
     parser.add_argument("--round-to", type=int, default=1,
                         help="round pruned channel counts to a multiple of this")
+    parser.add_argument("--max-pruning-ratio", type=float, default=0.5,
+                        help="maximum pruning ratio for any dependency group")
     args = parser.parse_args()
 
     set_seed(args.seed, deterministic=args.deterministic)

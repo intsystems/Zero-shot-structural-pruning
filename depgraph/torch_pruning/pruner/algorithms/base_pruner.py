@@ -489,6 +489,18 @@ class BasePruner:
                     # no grouping
                     dim_imp = imp.cpu()
 
+                # Exclude the channels reserved by max_pruning_ratio before
+                # global thresholding so the budget moves to other groups.
+                if self.global_pruning and self.max_pruning_ratio < 1:
+                    min_remaining = math.ceil(
+                        group_size * (1 - self.max_pruning_ratio)
+                    )
+                    if min_remaining > 0:
+                        protected = torch.topk(
+                            dim_imp, k=min_remaining, largest=True
+                        ).indices
+                        dim_imp[protected] = torch.inf
+
                 # Importance scores for Attention Heads
                 if _is_atten and self.prune_num_heads and self.get_target_head_pruning_ratio(qkv_layers[0]) > 0:
                     # average importance over heads
@@ -631,12 +643,24 @@ class BasePruner:
                             else:
                                 _pruning_indices = topk_indices
                             imp_argsort = torch.argsort(imp)
+                            initial_group_size = (
+                                self.layer_init_out_ch[module]
+                                if self.DG.is_out_channel_pruning_fn(pruning_fn)
+                                else self.layer_init_in_ch[module]
+                            ) // ch_groups
+                            min_remaining = math.ceil(
+                                initial_group_size * (1 - self.max_pruning_ratio)
+                            )
+                            max_pruned = max(group_size - min_remaining, 0)
+                            if len(_pruning_indices) > max_pruned:
+                                _pruning_indices = imp_argsort[:max_pruned]
                             # recompute the number of pruned channels if round_to is enabled
                             if len(_pruning_indices) > 0 and self.round_to:
                                 n_pruned = len(_pruning_indices)
                                 current_channels = get_channel_fn(module)
                                 n_pruned = self._round_to(
                                     n_pruned, current_channels, self.round_to)
+                                n_pruned = min(n_pruned, max_pruned)
                                 _pruning_indices = imp_argsort[:n_pruned]
                             if ch_groups > 1:  
                                 # if channel grouping is enabled, we repeat the pruning indices for each channel group.
