@@ -169,12 +169,15 @@ class SurrogateImportance(Importance):
         _, idxs = group[0]
         n = len(idxs)
         # The surrogate produces one score per group, so all channels of the
-        # group get the same score. Add a tiny magnitude-based tie-breaker so
-        # MetaPruner can pick a subset of channels within the group instead of
-        # facing a full tie (which its check_pruning_group refuses to resolve).
+        # group get the same score. Use magnitude to rank channels within it,
+        # and protect one channel so global pruning cannot select the entire
+        # group and have DependencyGraph reject it as over-pruning.
         scalar = self._imp[key]
-        tie_break = 1e-6 * _channel_weight_norms(root, fn, idxs)
-        return torch.full((n,), scalar) + tie_break
+        channel_magnitudes = _channel_weight_norms(root, fn, idxs)
+        scores = torch.full((n,), scalar) + 1e-6 * channel_magnitudes
+        if n > 0:
+            scores[channel_magnitudes.argmax()] = torch.inf
+        return scores
 
 
 def _make_mask_hook(mask_state: torch.Tensor, idx: int):
