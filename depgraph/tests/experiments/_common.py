@@ -40,9 +40,9 @@ CIFAR10_STD = (0.2470, 0.2435, 0.2616)
 # comparable to CNNs trained with plain SGD.
 MODEL_HPARAMS: typing.Dict[str, dict] = {
     "conv": dict(optimizer="sgd", lr=1e-2, weight_decay=5e-4,
-                 epochs=5, finetune_lr=1e-3),
+                 epochs=20, finetune_lr=1e-3),
     "vit": dict(optimizer="adamw", lr=1e-3, weight_decay=0.05,
-                epochs=10, finetune_lr=1e-4),
+                epochs=50, finetune_lr=1e-4),
 }
 
 
@@ -149,7 +149,7 @@ def make_common_parser(description: str,
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--epochs", type=int, default=hp["epochs"],
                    help="pre-pruning training epochs")
-    p.add_argument("--finetune-epochs", type=int, default=2,
+    p.add_argument("--finetune-epochs", type=int, default=5,
                    help="post-pruning fine-tune epochs")
     p.add_argument("--lr", type=float, default=hp["lr"])
     p.add_argument("--finetune-lr", type=float, default=hp["finetune_lr"])
