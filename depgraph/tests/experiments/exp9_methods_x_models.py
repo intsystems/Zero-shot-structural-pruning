@@ -23,6 +23,7 @@ counts may differ and are reported separately.
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 import time
 
 import torch
@@ -75,7 +76,7 @@ MODEL_SPECS = {
     "mobilenetv2": dict(
         model_fn=make_cifar_mobilenetv2,
         ignored_layers_fn=mbv2_ignored,
-        pruner_kwargs_fn=None,
+        pruner_kwargs_fn=lambda model: {"isomorphic": True},
         target_types=None,
     ),
 }
@@ -213,18 +214,32 @@ def run_model(model_name, spec, args, train_loader, test_loader, calib_ds,
 
     # ---- 1. baseline training (once per model) ----
     model = spec["model_fn"]().to(device)
-    opt = make_optimizer(args.optimizer, model,
-                         args.lr, args.weight_decay)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(
-        opt, T_max=max(args.epochs, 1))
-    print(f"[baseline] training {args.epochs} epochs, "
-          f"{args.optimizer} lr={args.lr}")
-    for epoch in range(args.epochs):
-        t0 = time.time()
-        loss, tr_acc = train_one_epoch(model, train_loader, opt, criterion, device)
-        sched.step()
-        print(f"  epoch {epoch+1}/{args.epochs}  loss={loss:.4f}  "
-              f"train_acc={tr_acc*100:.2f}%  ({time.time()-t0:.1f}s)")
+    checkpoint_path = Path(args.checkpoint_dir) / f"{model_name}_seed{args.seed}.pt"
+    train_config = dict(epochs=args.epochs, optimizer=args.optimizer, lr=args.lr,
+                        weight_decay=args.weight_decay, batch_size=args.batch_size,
+                        seed=args.seed, deterministic=args.deterministic)
+    checkpoint = (torch.load(checkpoint_path, map_location=device, weights_only=True)
+                  if checkpoint_path.exists() else None)
+    if checkpoint is not None and checkpoint.get("train_config") == train_config:
+        model.load_state_dict(checkpoint["state_dict"])
+        print(f"[baseline] loaded checkpoint: {checkpoint_path}")
+    else:
+        opt = make_optimizer(args.optimizer, model,
+                             args.lr, args.weight_decay)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=max(args.epochs, 1))
+        print(f"[baseline] training {args.epochs} epochs, "
+              f"{args.optimizer} lr={args.lr}")
+        for epoch in range(args.epochs):
+            t0 = time.time()
+            loss, tr_acc = train_one_epoch(model, train_loader, opt, criterion, device)
+            sched.step()
+            print(f"  epoch {epoch+1}/{args.epochs}  loss={loss:.4f}  "
+                  f"train_acc={tr_acc*100:.2f}%  ({time.time()-t0:.1f}s)")
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(dict(state_dict=model.state_dict(), train_config=train_config),
+                   checkpoint_path)
+        print(f"[baseline] saved checkpoint: {checkpoint_path}")
 
     base_acc = evaluate(model, test_loader, device)
     base_macs, base_nparams = count_stats(model, example_inputs)
@@ -291,6 +306,8 @@ def main():
                         help="round pruned channel counts to a multiple of this")
     parser.add_argument("--max-pruning-ratio", type=float, default=0.5,
                         help="maximum pruning ratio for any dependency group")
+    parser.add_argument("--checkpoint-dir", default="./.checkpoints/exp9",
+                        help="directory for reusable baseline checkpoints")
     args = parser.parse_args()
 
     set_seed(args.seed, deterministic=args.deterministic)
