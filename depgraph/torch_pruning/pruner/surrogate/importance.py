@@ -169,14 +169,10 @@ class SurrogateImportance(Importance):
         _, idxs = group[0]
         n = len(idxs)
         # The surrogate produces one score per group, so all channels of the
-        # group get the same score. Use magnitude to rank channels within it,
-        # and protect one channel so global pruning cannot select the entire
-        # group and have DependencyGraph reject it as over-pruning.
+        # group get the same score. Use magnitude to rank channels within it.
         scalar = self._imp[key]
         channel_magnitudes = _channel_weight_norms(root, fn, idxs)
-        scores = torch.full((n,), scalar) + 1e-6 * channel_magnitudes
-        if n > 0:
-            scores[channel_magnitudes.argmax()] = torch.inf
+        scores = torch.full((n,), scalar) + 1e-3 * channel_magnitudes
         return scores
 
 

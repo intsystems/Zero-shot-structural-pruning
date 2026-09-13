@@ -25,7 +25,7 @@ LINE_STYLES = {
 }
 
 
-def plot_model(result: dict, output_dir: Path, formats: list[str], dpi: int) -> None:
+def plot_model(result: dict, output_dir: Path, formats: list[str], dpi: int):
     model_name = result["model"]
     baseline = result["baseline"]
     measurements = result["measurements"]
@@ -33,6 +33,14 @@ def plot_model(result: dict, output_dir: Path, formats: list[str], dpi: int) -> 
     palette = dict(zip(methods, sns.color_palette("colorblind", len(methods))))
 
     figure, axis = plt.subplots(figsize=(7.2, 4.8), constrained_layout=True)
+    axis.axhline(
+        baseline["accuracy"] * 100.0,
+        color="grey",
+        linestyle="--",
+        linewidth=1.8,
+        label="Baseline",
+        zorder=2,
+    )
     for method in methods:
         rows = sorted(
             (row for row in measurements if row["method"] == method),
@@ -54,16 +62,35 @@ def plot_model(result: dict, output_dir: Path, formats: list[str], dpi: int) -> 
                 markersize=5,
             )
 
-    axis.set_title(f"Pruning Accuracy: {MODEL_TITLES.get(model_name, model_name)}")
+    axis.set_title(MODEL_TITLES.get(model_name, model_name))
     axis.set_xlabel("Removed parameters (%)")
     axis.set_ylabel("Test accuracy (%)")
     axis.set_xlim(left=0)
-    axis.legend(fontsize=8, ncol=2, frameon=True)
     axis.grid(True, which="major", alpha=0.75)
     sns.despine(ax=axis)
 
+    handles, labels = axis.get_legend_handles_labels()
+
     for extension in formats:
-        destination = output_dir / f"{model_name}_accuracy_vs_parameters.{extension}"
+        destination = output_dir / f"{model_name}_acc_vs_params.{extension}"
+        figure.savefig(destination, dpi=dpi, bbox_inches="tight")
+        print(f"Saved: {destination}")
+    plt.close(figure)
+    return handles, labels
+
+
+def save_legend(handles, labels, output_dir: Path, formats: list[str], dpi: int) -> None:
+    figure = plt.figure(figsize=(7.2, 4.8))
+
+    figure.legend(
+        handles,
+        labels,
+        loc="center",
+        ncol=1,
+        frameon=True,
+    )
+    for extension in formats:
+        destination = output_dir / f"legend_acc_vs_params.{extension}"
         figure.savefig(destination, dpi=dpi, bbox_inches="tight")
         print(f"Saved: {destination}")
     plt.close(figure)
@@ -88,18 +115,24 @@ def main() -> None:
     sns.set_theme(
         style="darkgrid",
         context="paper",
-        font_scale=1.15,
         rc={
             "figure.dpi": 120,
             "savefig.dpi": args.dpi,
-            "axes.titleweight": "semibold",
-            "axes.labelsize": 11,
-            "legend.title_fontsize": 9,
+            'axes.titlesize': 21,
+            'axes.labelsize': 20,
+            'xtick.labelsize': 16,
+            'ytick.labelsize': 16,
+            'legend.fontsize': 21
         },
     )
+    legend_items = None
     for result in payload["results"]:
         if result["measurements"]:
-            plot_model(result, output_dir, args.formats, args.dpi)
+            items = plot_model(result, output_dir, args.formats, args.dpi)
+            if legend_items is None:
+                legend_items = items
+    if legend_items is not None:
+        save_legend(*legend_items, output_dir, args.formats, args.dpi)
 
 
 if __name__ == "__main__":
