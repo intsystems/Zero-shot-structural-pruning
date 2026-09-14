@@ -171,8 +171,9 @@ class SurrogateImportance(Importance):
         # The surrogate produces one score per group. Modulate it by the
         # per-channel magnitude so channels within a group are ranked too.
         scalar = self._imp[key]
-        channel_magnitudes = _channel_weight_norms(root, fn, idxs)
-        scores = scalar * (1.0 + channel_magnitudes)
+        # channel_magnitudes = _channel_weight_norms(root, fn, idxs)
+        # scores = scalar * (1.0 + channel_magnitudes)
+        scores = torch.full((n,), scalar)
         return scores
 
 
