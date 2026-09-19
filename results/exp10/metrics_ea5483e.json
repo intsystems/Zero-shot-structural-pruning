@@ -1,0 +1,791 @@
+{
+  "experiment": "exp10_pruning_curves",
+  "config": {
+    "models": [
+      "resnet18",
+      "vit",
+      "mobilenetv2"
+    ],
+    "methods": [
+      "taylor",
+      "magnitude",
+      "surrogate"
+    ],
+    "pruning_ratios": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "epochs": 20,
+    "finetune_epochs": 5,
+    "seed": 0,
+    "deterministic": false
+  },
+  "results": [
+    {
+      "model": "resnet18",
+      "baseline": {
+        "accuracy": 0.8877,
+        "parameters": 11173962,
+        "macs": 557216778.0
+      },
+      "measurements": [
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 19.00602489967301,
+          "accuracy_before_finetuning": 0.5005,
+          "accuracy_after_finetuning": 0.8853,
+          "parameters": 9050236,
+          "macs": 463990946.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 11.133696355867329,
+          "accuracy_before_finetuning": 0.1784,
+          "accuracy_after_finetuning": 0.8754,
+          "parameters": 9929887,
+          "macs": 373437466.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 11.676574522089833,
+          "accuracy_before_finetuning": 0.2789,
+          "accuracy_after_finetuning": 0.8709,
+          "parameters": 9869226,
+          "macs": 426740106.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 37.12397625837639,
+          "accuracy_before_finetuning": 0.214,
+          "accuracy_after_finetuning": 0.8799,
+          "parameters": 7025743,
+          "macs": 376627836.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 28.22270202816154,
+          "accuracy_before_finetuning": 0.1102,
+          "accuracy_after_finetuning": 0.8716,
+          "parameters": 8020368,
+          "macs": 295465334.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 27.960440531299458,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.8234,
+          "parameters": 8049673,
+          "macs": 315606090.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 52.320671933554095,
+          "accuracy_before_finetuning": 0.1361,
+          "accuracy_after_finetuning": 0.8669,
+          "parameters": 5327670,
+          "macs": 297306192.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 45.437705981101416,
+          "accuracy_before_finetuning": 0.0983,
+          "accuracy_after_finetuning": 0.8565,
+          "parameters": 6096770,
+          "macs": 226788352.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 72.60907098126877,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7912,
+          "parameters": 3060652,
+          "macs": 227635048.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 65.09488756092065,
+          "accuracy_before_finetuning": 0.1014,
+          "accuracy_after_finetuning": 0.8558,
+          "parameters": 3900284,
+          "macs": 212419438.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 61.49075860469186,
+          "accuracy_before_finetuning": 0.0971,
+          "accuracy_after_finetuning": 0.8466,
+          "parameters": 4303008,
+          "macs": 172608976.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 89.61968905926116,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7576,
+          "parameters": 1159892,
+          "macs": 168130258.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 75.45620792338474,
+          "accuracy_before_finetuning": 0.1006,
+          "accuracy_after_finetuning": 0.8447,
+          "parameters": 2742514,
+          "macs": 148223060.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 74.79049955602139,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.8335,
+          "parameters": 2816900,
+          "macs": 130128420.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 92.84833794852712,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7081,
+          "parameters": 799124,
+          "macs": 125094418.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 84.06693167562231,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.8061,
+          "parameters": 1780355,
+          "macs": 87804152.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 85.01364153556277,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.8171,
+          "parameters": 1674570,
+          "macs": 94049788.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 93.57493787789863,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7064,
+          "parameters": 717934,
+          "macs": 119883538.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 91.08246475153577,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7371,
+          "parameters": 996442,
+          "macs": 50976750.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 92.16872224910018,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7923,
+          "parameters": 875064,
+          "macs": 64774448.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 94.66200976878211,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6736,
+          "parameters": 596465,
+          "macs": 56815378.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 95.98150593316855,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6796,
+          "parameters": 449025,
+          "macs": 22079568.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 97.05435726378879,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.749,
+          "parameters": 329145,
+          "macs": 42281298.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 98.95206373531609,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5971,
+          "parameters": 117096,
+          "macs": 6360274.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.95206373531609,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5954,
+          "parameters": 117096,
+          "macs": 6360274.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.95206373531609,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6269,
+          "parameters": 117096,
+          "macs": 6360274.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.95206373531609,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5987,
+          "parameters": 117096,
+          "macs": 6360274.0
+        }
+      ]
+    },
+    {
+      "model": "vit",
+      "baseline": {
+        "accuracy": 0.7142,
+        "parameters": 2693578,
+        "macs": 173761930.0
+      },
+      "measurements": [
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 7.1466280167123415,
+          "accuracy_before_finetuning": 0.7063,
+          "accuracy_after_finetuning": 0.7181,
+          "parameters": 2501078,
+          "macs": 161248930.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 7.1466280167123415,
+          "accuracy_before_finetuning": 0.7,
+          "accuracy_after_finetuning": 0.72,
+          "parameters": 2501078,
+          "macs": 161248930.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 7.203801040846047,
+          "accuracy_before_finetuning": 0.7106,
+          "accuracy_after_finetuning": 0.7186,
+          "parameters": 2499538,
+          "macs": 161148826.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 16.003360585808167,
+          "accuracy_before_finetuning": 0.6896,
+          "accuracy_after_finetuning": 0.7158,
+          "parameters": 2262515,
+          "macs": 145764828.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 14.436411345801014,
+          "accuracy_before_finetuning": 0.674,
+          "accuracy_after_finetuning": 0.7177,
+          "parameters": 2304722,
+          "macs": 148486444.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 14.864986274761671,
+          "accuracy_before_finetuning": 0.704,
+          "accuracy_after_finetuning": 0.7182,
+          "parameters": 2293178,
+          "macs": 147734890.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 26.642332243580846,
+          "accuracy_before_finetuning": 0.6527,
+          "accuracy_after_finetuning": 0.7117,
+          "parameters": 1975946,
+          "macs": 127184498.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 22.98578322216769,
+          "accuracy_before_finetuning": 0.6338,
+          "accuracy_after_finetuning": 0.7142,
+          "parameters": 2074438,
+          "macs": 133527862.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 21.4255907941036,
+          "accuracy_before_finetuning": 0.6917,
+          "accuracy_after_finetuning": 0.7179,
+          "parameters": 2116463,
+          "macs": 136247956.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 42.74452048539155,
+          "accuracy_before_finetuning": 0.4661,
+          "accuracy_after_finetuning": 0.7036,
+          "parameters": 1542221,
+          "macs": 99132166.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 36.59648987332091,
+          "accuracy_before_finetuning": 0.5253,
+          "accuracy_after_finetuning": 0.7096,
+          "parameters": 1707823,
+          "macs": 109777928.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 27.614570656576497,
+          "accuracy_before_finetuning": 0.6715,
+          "accuracy_after_finetuning": 0.7173,
+          "parameters": 1949758,
+          "macs": 125411698.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 66.21605166065359,
+          "accuracy_before_finetuning": 0.2542,
+          "accuracy_after_finetuning": 0.6707,
+          "parameters": 909997,
+          "macs": 58333850.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 67.98232685298143,
+          "accuracy_before_finetuning": 0.1142,
+          "accuracy_after_finetuning": 0.6682,
+          "parameters": 862421,
+          "macs": 55257586.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 35.461568218926644,
+          "accuracy_before_finetuning": 0.623,
+          "accuracy_after_finetuning": 0.715,
+          "parameters": 1738393,
+          "macs": 111672424.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 84.83648886351165,
+          "accuracy_before_finetuning": 0.1838,
+          "accuracy_after_finetuning": 0.5947,
+          "parameters": 408441,
+          "macs": 26053132.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 93.37245849201322,
+          "accuracy_before_finetuning": 0.099,
+          "accuracy_after_finetuning": 0.3637,
+          "parameters": 178518,
+          "macs": 11350774.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 42.29374460290365,
+          "accuracy_before_finetuning": 0.515,
+          "accuracy_after_finetuning": 0.708,
+          "parameters": 1554363,
+          "macs": 99709996.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 95.23292067280028,
+          "accuracy_before_finetuning": 0.0814,
+          "accuracy_after_finetuning": 0.3529,
+          "parameters": 128405,
+          "macs": 8118330.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 97.18927760770248,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.3072,
+          "parameters": 75709,
+          "macs": 4777004.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 49.383199595482296,
+          "accuracy_before_finetuning": 0.3059,
+          "accuracy_after_finetuning": 0.6793,
+          "parameters": 1363403,
+          "macs": 87297100.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 97.98275750692945,
+          "accuracy_before_finetuning": 0.0865,
+          "accuracy_after_finetuning": 0.3117,
+          "parameters": 54336,
+          "macs": 3389566.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 97.98275750692945,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.3007,
+          "parameters": 54336,
+          "macs": 3389566.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 95.62559539764581,
+          "accuracy_before_finetuning": 0.0918,
+          "accuracy_after_finetuning": 0.3098,
+          "parameters": 117828,
+          "macs": 7322518.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.73164987240021,
+          "accuracy_before_finetuning": 0.0903,
+          "accuracy_after_finetuning": 0.304,
+          "parameters": 34164,
+          "macs": 2077894.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.73164987240021,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.3004,
+          "parameters": 34164,
+          "macs": 2077894.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 95.62559539764581,
+          "accuracy_before_finetuning": 0.0918,
+          "accuracy_after_finetuning": 0.3098,
+          "parameters": 117828,
+          "macs": 7322518.0
+        }
+      ]
+    },
+    {
+      "model": "mobilenetv2",
+      "baseline": {
+        "accuracy": 0.8125,
+        "parameters": 2236682,
+        "macs": 26050058.0
+      },
+      "measurements": [
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 18.122603034316008,
+          "accuracy_before_finetuning": 0.2251,
+          "accuracy_after_finetuning": 0.7991,
+          "parameters": 1831337,
+          "macs": 20106882.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 14.969360865782445,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7693,
+          "parameters": 1901865,
+          "macs": 18784426.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.1,
+          "removed_parameters_percent": 35.38062183180264,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6739,
+          "parameters": 1445330,
+          "macs": 17880780.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 35.08174161548222,
+          "accuracy_before_finetuning": 0.101,
+          "accuracy_after_finetuning": 0.78,
+          "parameters": 1452015,
+          "macs": 16272974.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 31.756682443011563,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7423,
+          "parameters": 1526386,
+          "macs": 15140430.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.2,
+          "removed_parameters_percent": 50.61890782864975,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6394,
+          "parameters": 1104498,
+          "macs": 16267948.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 49.661731082022385,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7561,
+          "parameters": 1125907,
+          "macs": 12690930.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 47.21042150828772,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6989,
+          "parameters": 1180735,
+          "macs": 11967738.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.3,
+          "removed_parameters_percent": 72.47369094041977,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5876,
+          "parameters": 615676,
+          "macs": 12848524.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 62.70770721989089,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.7152,
+          "parameters": 834110,
+          "macs": 9752822.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 61.727415877625866,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6788,
+          "parameters": 856036,
+          "macs": 9285430.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.4,
+          "removed_parameters_percent": 81.81650319535812,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5521,
+          "parameters": 406707,
+          "macs": 10124540.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 73.70377192645176,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6792,
+          "parameters": 588163,
+          "macs": 7157134.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 73.57827353195492,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6373,
+          "parameters": 590970,
+          "macs": 7198854.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.5,
+          "removed_parameters_percent": 86.60055385611365,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5082,
+          "parameters": 299703,
+          "macs": 8898860.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 83.00558595276397,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.6393,
+          "parameters": 380111,
+          "macs": 4953222.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 83.34604561578266,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5917,
+          "parameters": 372496,
+          "macs": 5290202.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.6,
+          "removed_parameters_percent": 96.8643732099601,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4311,
+          "parameters": 70134,
+          "macs": 1282636.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 90.12032108274668,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5706,
+          "parameters": 220977,
+          "macs": 3253154.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 90.79346102843408,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.5635,
+          "parameters": 205921,
+          "macs": 3838134.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.7,
+          "removed_parameters_percent": 97.97982010853576,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4251,
+          "parameters": 45185,
+          "macs": 1066826.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 95.24152293441803,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4909,
+          "parameters": 106432,
+          "macs": 1859828.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 95.8456320567698,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4981,
+          "parameters": 92920,
+          "macs": 2468048.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.8,
+          "removed_parameters_percent": 98.35139729295447,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4136,
+          "parameters": 36874,
+          "macs": 922234.0
+        },
+        {
+          "method": "taylor",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.51896693405678,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4169,
+          "parameters": 33126,
+          "macs": 711258.0
+        },
+        {
+          "method": "magnitude",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.51896693405678,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.3976,
+          "parameters": 33126,
+          "macs": 711258.0
+        },
+        {
+          "method": "surrogate",
+          "requested_pruning_ratio": 0.9,
+          "removed_parameters_percent": 98.51896693405678,
+          "accuracy_before_finetuning": 0.1,
+          "accuracy_after_finetuning": 0.4099,
+          "parameters": 33126,
+          "macs": 711258.0
+        }
+      ]
+    }
+  ]
+}
