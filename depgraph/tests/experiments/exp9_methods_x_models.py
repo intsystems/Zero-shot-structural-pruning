@@ -67,18 +67,18 @@ MODEL_SPECS = {
         pruner_kwargs_fn=None,
         target_types=None,           # default (Conv/BN) covers ResNet groups
     ),
-    "vit": dict(
-        model_fn=make_vit,
-        ignored_layers_fn=vit_ignored,
-        pruner_kwargs_fn=vit_pruner_kwargs,
-        target_types=VIT_TARGET_TYPES,
-    ),
-    "mobilenetv2": dict(
-        model_fn=make_cifar_mobilenetv2,
-        ignored_layers_fn=mbv2_ignored,
-        pruner_kwargs_fn=lambda model: {"isomorphic": True},
-        target_types=None,
-    ),
+    #"vit": dict(
+    #    model_fn=make_vit,
+    #    ignored_layers_fn=vit_ignored,
+    #    pruner_kwargs_fn=vit_pruner_kwargs,
+    #    target_types=VIT_TARGET_TYPES,
+    #),
+    #"mobilenetv2": dict(
+    #    model_fn=make_cifar_mobilenetv2,
+    #    ignored_layers_fn=mbv2_ignored,
+    #    pruner_kwargs_fn=lambda model: {"isomorphic": True},
+    #    target_types=None,
+    #),
 }
 
 
@@ -94,13 +94,31 @@ def build_importance(name: str, args, target_types):
             p=2, normalizer="mean",
             **target_types_kwargs,
         )
+    if name == "magnitude-mean":
+        return tp.importance.GroupMeanMagnitudeImportance(
+            p=2, normalizer="mean",
+            **target_types_kwargs,
+        )
     if name == "taylor":
         return tp.importance.TaylorImportance(
             normalizer="mean",
             **target_types_kwargs,
         )
+    if name == "taylor-mean":
+        return tp.importance.GroupMeanTaylorImportance(
+            normalizer="mean",
+            **target_types_kwargs,
+        )
     if name == "surrogate":
         return tp.importance.SurrogateImportance(
+            surrogate_epochs=args.surrogate_epochs,
+            surrogate_lr=args.surrogate_lr,
+            surrogate_batch_size=args.surrogate_batch_size,
+            normalizer="mean",
+            **target_types_kwargs,
+        )
+    if name == "surrogate2":
+        return tp.importance.ChannelSurrogateImportance(
             surrogate_epochs=args.surrogate_epochs,
             surrogate_lr=args.surrogate_lr,
             surrogate_batch_size=args.surrogate_batch_size,
@@ -114,7 +132,7 @@ def score_model(importance, model, pruner, calib_loader, criterion, device,
                 method_name: str):
     """Method-specific scoring right before `pruner.step()`."""
     t0 = time.time()
-    if isinstance(importance, tp.importance.SurrogateImportance):
+    if isinstance(importance, tp.importance.SurrogateImportance) or isinstance(importance, tp.importance.ChannelSurrogateImportance):
         importance.fit(pruner, calib_loader, criterion, device=device)
         print(f"    [{method_name}] surrogate fit: {time.time()-t0:.1f}s, "
               f"{len(importance._imp)} groups scored")

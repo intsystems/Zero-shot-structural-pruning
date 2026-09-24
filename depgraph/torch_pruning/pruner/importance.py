@@ -270,6 +270,18 @@ class GroupMagnitudeImportance(Importance):
         return group_imp
 
 
+class GroupMeanMagnitudeImportance(GroupMagnitudeImportance):
+    """Magnitude importance with identical importance for all channels in a group."""
+
+    @torch.no_grad()
+    def __call__(self, group):
+        imp = super().__call__(group)
+
+        if imp is None:
+            return None
+
+        return imp.mean().expand_as(imp)
+        
 class BNScaleImportance(GroupMagnitudeImportance):
     """Learning Efficient Convolutional Networks through Network Slimming, 
     https://arxiv.org/abs/1708.06519
@@ -824,6 +836,20 @@ class MagnitudeImportance(GroupMagnitudeImportance):
 class TaylorImportance(GroupTaylorImportance):
     pass
 
+        
+class GroupMeanTaylorImportance(TaylorImportance):
+    @torch.no_grad()
+    def __call__(self, group):
+        imp = super().__call__(group)
+
+        if imp is None:
+            return None
+
+        # Same importance for every channel in this pruning group.
+        return imp.mean().expand_as(imp)
+        
+        
+        
 class HessianImportance(GroupHessianImportance):
     pass
 
@@ -889,4 +915,4 @@ class ActivationImportance(GroupMagnitudeImportance):
 
 # Re-export at the bottom so that `Importance` is fully defined before the
 # submodule imports it back. This avoids the usual circular-import gotcha.
-from .surrogate import SurrogateImportance  # noqa: E402,F401
+from .surrogate import SurrogateImportance, ChannelSurrogateImportance  # noqa: E402,F401
