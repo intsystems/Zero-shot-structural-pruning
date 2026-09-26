@@ -82,7 +82,8 @@ def build_hadamard_log_dataset(
     data_loader, 
     criterion, 
     device, 
-    n_masks: int = 256  # Фиксированное число масок K = O(log C)
+    n_masks: int = 256,  # Фиксированное число масок K = O(log C)
+    seed: int = 0,
 ):
     """
     Генерирует строго K (например, 256) масок Адамара для ЛЮБОГО числа каналов (даже 8200+).
@@ -102,7 +103,7 @@ def build_hadamard_log_dataset(
     
     # Перемешиваем индексы для каждого повтора, чтобы устранить дублирование групп каналов
     projected_cols = []
-    g = torch.Generator().manual_seed(42) # Фиксируем seed для воспроизводимости
+    g = torch.Generator().manual_seed(seed) # Seed для воспроизводимости
     for _ in range(repeats):
         perm = torch.randperm(K, generator=g)
         projected_cols.append(masks_base[:, perm])
@@ -159,6 +160,7 @@ def build_hybrid_hadamard_dataset(
     data_loader: Iterable,
     criterion: Callable,
     device: str | torch.device,
+    seed: int = 0,
 ) -> TensorDataset:
     """
     Гибридное сэмплирование:
@@ -195,7 +197,8 @@ def build_hybrid_hadamard_dataset(
 
         H = generate_hadamard_matrix(K)
         # Скрэмблинг столбцов для устранения дубликатов при обрезке
-        scramble_signs = torch.randint(0, 2, (K,), dtype=torch.float32) * 2.0 - 1.0
+        g = torch.Generator().manual_seed(seed + g_idx)
+        scramble_signs = torch.randint(0, 2, (K,), dtype=torch.float32, generator=g) * 2.0 - 1.0
         H_scrambled = H * scramble_signs
 
         group_masks_bin = (H_scrambled + 1.0) / 2.0  # [K, K]

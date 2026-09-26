@@ -59,11 +59,13 @@ class SurrogateImportance(Importance):
             nn.Linear,
             nn.modules.batchnorm._BatchNorm,
         ),
+        seed: int = 0,
     ):
         self.surrogate_epochs = surrogate_epochs
         self.surrogate_lr = surrogate_lr
         self.surrogate_batch_size = surrogate_batch_size
         self.normalizer = normalizer
+        self.seed = seed
         self.target_types = tuple(target_types)
         self._imp: typing.Dict[typing.Tuple[int, typing.Callable], float] = {}
 
@@ -118,6 +120,7 @@ class SurrogateImportance(Importance):
             dataset,
             batch_size=self.surrogate_batch_size,
             shuffle=True,
+            generator=torch.Generator().manual_seed(self.seed),
         )
         surrogate.train()
         for _ in range(self.surrogate_epochs):

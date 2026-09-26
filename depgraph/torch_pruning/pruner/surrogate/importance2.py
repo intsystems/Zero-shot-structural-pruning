@@ -60,11 +60,13 @@ class ChannelSurrogateImportance(Importance):
             nn.Linear,
             nn.modules.batchnorm._BatchNorm,
         ),
+        seed: int = 0,
     ):
         self.surrogate_epochs = surrogate_epochs
         self.surrogate_lr = surrogate_lr
         self.surrogate_batch_size = surrogate_batch_size
         self.normalizer = normalizer
+        self.seed = seed
         self.target_types = tuple(target_types)
         self._imp: typing.Dict[typing.Tuple[int, typing.Callable], float] = {}
 
@@ -122,6 +124,7 @@ class ChannelSurrogateImportance(Importance):
             # 4. Собираем датасет поканальных масок (mask_state размерности total_channels)
             dataset = build_hybrid_hadamard_dataset(
                 model, total_channels, group_channel_counts,  mask_state, data_loader, criterion, device,
+                seed=self.seed,
             )
         finally:
             for h in hooks:
@@ -134,7 +137,8 @@ class ChannelSurrogateImportance(Importance):
         ).to(device)
         
         optimizer = torch.optim.Adam(surrogate.parameters(), lr=self.surrogate_lr)
-        loader = DataLoader(dataset, batch_size=self.surrogate_batch_size, shuffle=True)
+        loader = DataLoader(dataset, batch_size=self.surrogate_batch_size, shuffle=True,
+                            generator=torch.Generator().manual_seed(self.seed))
         
         surrogate.train()
         for _ in tqdm.tqdm(range((self.surrogate_epochs))):

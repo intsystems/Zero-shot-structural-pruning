@@ -109,7 +109,7 @@ def run_model(model_name, spec, args, train_loader, test_loader, calib_ds,
     criterion = nn.CrossEntropyLoss()
     example_inputs = torch.randn(1, 3, 32, 32, device=device)
     calib = calibration_loader(
-        calib_ds, args.calibration_samples, args.batch_size,
+        calib_ds, args.calibration_samples, args.batch_size, seed=args.seed,
     )
     model, base_acc, base_params, base_macs = load_or_train_baseline(
         model_name, spec, args, train_loader, test_loader, device, criterion,

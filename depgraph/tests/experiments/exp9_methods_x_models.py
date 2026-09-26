@@ -115,6 +115,7 @@ def build_importance(name: str, args, target_types):
             surrogate_lr=args.surrogate_lr,
             surrogate_batch_size=args.surrogate_batch_size,
             normalizer="mean",
+            seed=args.seed,
             **target_types_kwargs,
         )
     if name == "surrogate2":
@@ -123,6 +124,7 @@ def build_importance(name: str, args, target_types):
             surrogate_lr=args.surrogate_lr,
             surrogate_batch_size=args.surrogate_batch_size,
             normalizer="mean",
+            seed=args.seed,
             **target_types_kwargs,
         )
     raise ValueError(f"Unknown method: {name!r}")
@@ -228,7 +230,7 @@ def run_model(model_name, spec, args, train_loader, test_loader, calib_ds,
     example_inputs = torch.randn(1, 3, 32, 32, device=device)
     criterion = nn.CrossEntropyLoss()
     calib_loader = calibration_loader(calib_ds, args.calibration_samples,
-                                      args.batch_size)
+                                      args.batch_size, seed=args.seed)
 
     # ---- 1. baseline training (once per model) ----
     model = spec["model_fn"]().to(device)

@@ -85,7 +85,7 @@ def get_cifar10_loaders(data_dir: str, batch_size: int, num_workers: int):
 
 
 def calibration_loader(calib_ds, n_samples: int, batch_size: int,
-                       num_classes: int = 10) -> DataLoader:
+                       num_classes: int = 10, seed: int = 0) -> DataLoader:
     """Stratified, shuffled calibration subset.
 
     CIFAR-10 train data is ordered by class, so taking the first N samples
@@ -100,7 +100,7 @@ def calibration_loader(calib_ds, n_samples: int, batch_size: int,
     idx: typing.List[int] = []
     for y in sorted(idx_by_class):
         idx.extend(idx_by_class[y][:per_class])
-    rng = random.Random(0)  # fixed seed -> the subset itself is reproducible
+    rng = random.Random(seed)  # seed the subset so it is reproducible per run
     rng.shuffle(idx)
     return DataLoader(Subset(calib_ds, idx), batch_size=batch_size, shuffle=False)
 
@@ -227,7 +227,8 @@ def run_pipeline(
 
     train_loader, test_loader, calib_ds = get_cifar10_loaders(
         args.data_dir, args.batch_size, args.num_workers)
-    calib_loader = calibration_loader(calib_ds, args.calibration_samples, args.batch_size)
+    calib_loader = calibration_loader(
+        calib_ds, args.calibration_samples, args.batch_size, seed=args.seed)
 
     model = model_fn().to(device)
     example_inputs = torch.randn(*example_inputs_shape, device=device)
@@ -258,6 +259,7 @@ def run_pipeline(
             surrogate_lr=args.surrogate_lr,
             surrogate_batch_size=args.surrogate_batch_size,
             normalizer="mean",
+            seed=args.seed,
         )
 
     default_pruner_kwargs = dict(

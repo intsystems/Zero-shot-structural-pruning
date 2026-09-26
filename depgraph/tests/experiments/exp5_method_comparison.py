@@ -46,6 +46,7 @@ def build_importance(name: str, args):
             surrogate_lr=args.surrogate_lr,
             surrogate_batch_size=32,
             normalizer="mean",
+            seed=args.seed,
             target_types=VIT_TARGET_TYPES,
         )
     raise ValueError(f"Unknown method: {name!r}")
@@ -138,7 +139,7 @@ def main():
 
     train_loader, test_loader, calib_ds = get_cifar10_loaders(
         args.data_dir, args.batch_size, args.num_workers)
-    calib_loader = calibration_loader(calib_ds, args.calibration_samples, args.batch_size)
+    calib_loader = calibration_loader(calib_ds, args.calibration_samples, args.batch_size, seed=args.seed)
 
     model = make_vit().to(device)
     example_inputs = torch.randn(1, 3, 32, 32, device=device)

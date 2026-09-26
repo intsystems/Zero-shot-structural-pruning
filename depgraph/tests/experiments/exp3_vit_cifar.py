@@ -112,6 +112,7 @@ def main():
         surrogate_lr=args.surrogate_lr,
         surrogate_batch_size=32,
         normalizer="mean",
+        seed=args.seed,
         target_types=(
             nn.modules.conv._ConvNd,
             nn.Linear,
