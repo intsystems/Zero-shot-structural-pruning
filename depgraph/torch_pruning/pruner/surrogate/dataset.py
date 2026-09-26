@@ -7,6 +7,7 @@ from typing import Callable, Iterable, List, Tuple
 import torch
 from torch.utils.data import TensorDataset
 from tqdm import tqdm 
+import math
 
 @torch.no_grad()
 def build_systematic_mask_dataset(
@@ -60,8 +61,6 @@ def build_systematic_mask_dataset(
     return TensorDataset(torch.vstack(masks), losses_t)
 
 
-import torch
-
 def generate_hadamard_matrix(n: int) -> torch.Tensor:
     """Генерирует матрицу Адамара размера n x n (n должно быть степенью двойки)."""
     if n < 1 or (n & (n - 1)) != 0:
@@ -74,10 +73,6 @@ def generate_hadamard_matrix(n: int) -> torch.Tensor:
             torch.cat([H, -H], dim=1)
         ], dim=0)
     return H
-
-import math
-import torch
-from tqdm import tqdm
 
 
 def build_hadamard_log_dataset(
@@ -142,12 +137,6 @@ def build_hadamard_log_dataset(
         dataset.append((mask.cpu(), torch.tensor(avg_loss, dtype=torch.float32)))
 
     return dataset
-
-import typing
-from typing import Iterable, Callable, List
-import torch
-from torch.utils.data import TensorDataset
-from tqdm import tqdm
 
 
 def generate_hadamard_matrix(n: int) -> torch.Tensor:

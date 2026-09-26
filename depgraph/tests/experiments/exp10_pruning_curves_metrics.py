@@ -28,7 +28,7 @@ from _common import (
 from exp9_methods_x_models import MODEL_SPECS, prune_and_finetune
 
 
-METHODS =  ['surrogate2'] # ('taylor-mean', 'magnitude-mean') #("taylor", "magnitude", "surrogate")
+METHODS = ("taylor", 'taylor-mean', "magnitude", 'magnitude-mean', 'surrogate2', "surrogate")
 
 
 def save_metrics(path: Path, args, results: list[dict]) -> None:

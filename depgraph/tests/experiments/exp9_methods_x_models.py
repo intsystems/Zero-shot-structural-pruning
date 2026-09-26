@@ -67,18 +67,18 @@ MODEL_SPECS = {
         pruner_kwargs_fn=None,
         target_types=None,           # default (Conv/BN) covers ResNet groups
     ),
-    #"vit": dict(
-    #    model_fn=make_vit,
-    #    ignored_layers_fn=vit_ignored,
-    #    pruner_kwargs_fn=vit_pruner_kwargs,
-    #    target_types=VIT_TARGET_TYPES,
-    #),
-    #"mobilenetv2": dict(
-    #    model_fn=make_cifar_mobilenetv2,
-    #    ignored_layers_fn=mbv2_ignored,
-    #    pruner_kwargs_fn=lambda model: {"isomorphic": True},
-    #    target_types=None,
-    #),
+    "vit": dict(
+        model_fn=make_vit,
+        ignored_layers_fn=vit_ignored,
+        pruner_kwargs_fn=vit_pruner_kwargs,
+        target_types=VIT_TARGET_TYPES,
+    ),
+    "mobilenetv2": dict(
+        model_fn=make_cifar_mobilenetv2,
+        ignored_layers_fn=mbv2_ignored,
+        pruner_kwargs_fn=lambda model: {"isomorphic": True},
+        target_types=None,
+    ),
 }
 
 
