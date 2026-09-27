@@ -61,12 +61,12 @@ def vit_ignored(model):
 
 
 MODEL_SPECS = {
-    #"resnet18": dict(
-    #    model_fn=make_cifar_resnet18,
-    #    ignored_layers_fn=resnet_ignored,
-    #    pruner_kwargs_fn=None,
-    #    target_types=None,           # default (Conv/BN) covers ResNet groups
-    #),
+    "resnet18": dict(
+        model_fn=make_cifar_resnet18,
+        ignored_layers_fn=resnet_ignored,
+        pruner_kwargs_fn=None,
+        target_types=None,           # default (Conv/BN) covers ResNet groups
+    ),
     "vit": dict(
         model_fn=make_vit,
         ignored_layers_fn=vit_ignored,

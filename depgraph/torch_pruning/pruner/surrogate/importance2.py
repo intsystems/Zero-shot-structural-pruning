@@ -112,7 +112,7 @@ class ChannelSurrogateImportance(Importance):
         
         # 2. Build a group-level DAG (vertices = groups, edges = data flow).
         edges = _build_group_graph(pruner.DG, root_modules)
-        print ('making masks', total_channels)
+        print('making masks', total_channels)
         # 3. Создаем вектор масок ДЛЯ ВСЕХ КАНАЛОВ (размерность total_channels)
         mask_state = torch.ones(total_channels, device=device)
         hooks = []
@@ -129,7 +129,7 @@ class ChannelSurrogateImportance(Importance):
         finally:
             for h in hooks:
                 h.remove()
-        print ('mask counts:', group_channel_counts)
+        print('mask counts:', group_channel_counts)
         surrogate = SurrogateModel(
             edges, 
             n_groups=n_groups, 
@@ -187,7 +187,6 @@ class ChannelSurrogateImportance(Importance):
         root = group[0].dep.target.module
         fn = group[0].dep.handler
         key = (id(root), fn)
-        print (group, key, key in self._imp)
         if key not in self._imp:
             return None
             
