@@ -198,19 +198,45 @@ class ChannelSurrogateImportance(Importance):
 
 
 
+def _channel_axis(module: nn.Module, output: torch.Tensor, c: int):
+    """Определяет ось выходного тензора, по которой лежат каналы группы.
+
+    Conv/BN держат каналы в dim=1 (B, C, ...), а Linear/LayerNorm в ViT
+    работают с последовательностями (B, N, C) и хранят признаки в последней
+    оси. Возвращает None, если ни одна ось не совпадает с числом каналов.
+    """
+    if isinstance(module, (nn.Linear, nn.LayerNorm)):
+        axis = output.dim() - 1
+        if output.shape[axis] == c:
+            return axis
+    elif isinstance(module, (nn.modules.conv._ConvNd,
+                            nn.modules.batchnorm._BatchNorm)):
+        if output.dim() >= 2 and output.shape[1] == c:
+            return 1
+    matches = [d for d in range(output.dim()) if output.shape[d] == c]
+    return matches[0] if len(matches) == 1 else None
+
+
 def _make_channel_mask_hook(mask_state: torch.Tensor, start: int, end: int):
     """Хук маскирования конкретного диапазона КАНАЛОВ для слоя."""
     def hook(module, input, output):
         channel_mask = mask_state[start:end]
         c = channel_mask.numel()
-        if output.dim() < 2 or output.shape[1] != c:
+        if not torch.is_tensor(output):
             raise RuntimeError(
-                f"ChannelSurrogateImportance: hook ожидает output.shape[1] == {c}, "
-                f"получено {tuple(output.shape)} для модуля {module}. "
+                f"ChannelSurrogateImportance: hook ожидает тензорный output, "
+                f"получено {type(output)} для модуля {module}."
+            )
+        axis = _channel_axis(module, output, c)
+        if axis is None:
+            raise RuntimeError(
+                f"ChannelSurrogateImportance: не удалось найти ось с {c} "
+                f"каналами в output {tuple(output.shape)} для модуля {module}. "
                 "Похоже, idxs этой группы — не полный непрерывный диапазон "
                 "выходных каналов модуля."
             )
-        view_shape = [1, c] + [1] * (output.dim() - 2)
+        view_shape = [1] * output.dim()
+        view_shape[axis] = c
         return output * channel_mask.view(*view_shape)
     return hook
 
