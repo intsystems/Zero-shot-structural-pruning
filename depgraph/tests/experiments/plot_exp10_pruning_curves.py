@@ -7,6 +7,7 @@ from pathlib import Path
 from statistics import mean
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import seaborn as sns
 
 
@@ -16,12 +17,20 @@ MODEL_TITLES = {
     "mobilenetv2": "MobileNetV2",
 }
 METHOD_LABELS = {
-    "taylor": "Taylor exp.",
-    "taylor-mean": "Taylor exp., mean",
+    "taylor": "Taylor",
+    "taylor-mean": "Taylor",
     "magnitude": "L1",
-    "magnitude-mean": "L1, mean",
-    "surrogate": "Graph, group",
-    "surrogate2": "Graph, channel",
+    "magnitude-mean": "L1",
+    "surrogate": "Graph",
+    "surrogate2": "Graph",
+}
+METHOD_COLOR_INDEX = {
+    "taylor": 0,
+    "taylor-mean": 0,
+    "magnitude": 1,
+    "magnitude-mean": 1,
+    "surrogate": 2,
+    "surrogate2": 2,
 }
 LINE_STYLES = {
     "accuracy_before_finetuning": ("Before fine-tuning", "--", "o"),
@@ -89,10 +98,17 @@ def average_results(payloads: list[dict], radius: float = 0.0) -> list[dict]:
     return averaged
 
 
-def plot_models(results: list[dict], output_dir: Path, formats: list[str], dpi: int):
+def plot_models(
+    results: list[dict], output_dir: Path, formats: list[str], dpi: int,
+    selected_methods: set[str], output_name: str, title: str,
+):
+    # Full text width of the Springer LNCS proceedings template: 122 mm.
+    width_inches = 122 / 25.4
     figure, axes = plt.subplots(
-        2, 2, figsize=(7.2 * 2, 6.8 * 2), constrained_layout=True,
+        2, 2, figsize=(width_inches, width_inches * 6.8 / 7.2),
+        constrained_layout=True,
     )
+    figure.suptitle(title)
     axes = axes.flatten()
     handles, labels = None, None
     for axis, result in zip(axes, results):
@@ -100,13 +116,15 @@ def plot_models(results: list[dict], output_dir: Path, formats: list[str], dpi: 
         baseline = result["baseline"]
         measurements = result["measurements"]
         methods = list(dict.fromkeys(row["method"] for row in measurements))
-        palette = dict(zip(methods, sns.color_palette("colorblind", len(methods))))
+        colors = sns.color_palette("colorblind", 3)
+        palette = {method: colors[METHOD_COLOR_INDEX[method]] for method in methods}
+        methods = [method for method in methods if method in selected_methods]
 
         axis.axhline(
             baseline["accuracy"] * 100.0,
             color="grey",
             linestyle="--",
-            linewidth=1.8,
+            linewidth=0.6,
             label="Baseline",
             zorder=2,
         )
@@ -125,12 +143,13 @@ def plot_models(results: list[dict], output_dir: Path, formats: list[str], dpi: 
                 axis.plot(
                     x_values,
                     y_values,
-                    label=f"{METHOD_LABELS.get(method, method.title())}, {state_label}",
+                    label=(METHOD_LABELS.get(method, method.title())
+                           if metric == "accuracy_after_finetuning" else "_nolegend_"),
                     color=palette[method],
                     linestyle=line_style,
                     marker=marker,
-                    linewidth=1.8,
-                    markersize=5,
+                    linewidth=0.6,
+                    markersize=1.2,
                 )
 
         axis.set_title(MODEL_TITLES.get(model_name, model_name))
@@ -145,16 +164,26 @@ def plot_models(results: list[dict], output_dir: Path, formats: list[str], dpi: 
     legend_axis = axes[len(results)] if len(results) < len(axes) else axes[-1]
     if len(results) < len(axes):
         legend_axis.axis("off")
-    legend_axis.legend(
+    method_legend = legend_axis.legend(
         handles,
         labels,
         loc="upper right",
         frameon=True,
     )
+    legend_axis.add_artist(method_legend)
+    legend_axis.legend(
+        handles=[
+            Line2D([], [], color="black", linestyle=line_style, marker=marker,
+                   linewidth=0.6, markersize=1.2, label=state_label)
+            for state_label, line_style, marker in LINE_STYLES.values()
+        ],
+        loc="lower right",
+        frameon=True,
+    )
 
     for extension in formats:
-        destination = output_dir / f"acc_vs_params.{extension}"
-        figure.savefig(destination, dpi=dpi, bbox_inches="tight")
+        destination = output_dir / f"{output_name}.{extension}"
+        figure.savefig(destination, dpi=dpi)
         print(f"Saved: {destination}")
     plt.close(figure)
 
@@ -189,16 +218,31 @@ def main() -> None:
         rc={
             "figure.dpi": 120,
             "savefig.dpi": args.dpi,
-            'axes.titlesize': 21,
-            'axes.labelsize': 20,
-            'xtick.labelsize': 16,
-            'ytick.labelsize': 16,
-            'legend.fontsize': 21
+            'font.size': 7,
+            'figure.titlesize': 9,
+            'axes.titlesize': 9,
+            'axes.labelsize': 8,
+            'xtick.labelsize': 7,
+            'ytick.labelsize': 7,
+            'legend.fontsize': 7,
         },
     )
     results = [result for result in results if result["measurements"]]
     if results:
-        plot_models(results, output_dir, args.formats, args.dpi)
+        mean_group_methods = {"taylor-mean", "magnitude-mean", "surrogate"}
+        other_methods = {
+            row["method"] for result in results for row in result["measurements"]
+        } - mean_group_methods
+        plot_models(
+            results, output_dir, args.formats, args.dpi,
+            mean_group_methods, "acc_vs_params_group",
+            "Group-wise pruning",
+        )
+        plot_models(
+            results, output_dir, args.formats, args.dpi,
+            other_methods, "acc_vs_params_channel",
+            "Channel-wise pruning",
+        )
 
 
 if __name__ == "__main__":
